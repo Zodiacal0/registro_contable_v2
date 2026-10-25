@@ -1,0 +1,15 @@
+# Java / Maven
+Desktop/target/
+
+# Bases locales
+*.db
+*.db-journal
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# React Native (cuando exista)
+Mobile/node_modules/
+Mobile/android/app/build/
