@@ -28,6 +28,15 @@
       "expo-sqlite",
       "expo-font",
       [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 120,
+          "resizeMode": "contain",
+          "backgroundColor": "#17151c"
+        }
+      ],
+      [
         "expo-camera",
         {
           "recordAudioAndroid": false,

@@ -75,6 +75,15 @@ src/
   estado.tsx              señal "cambiaron los datos" y sync automática
 ```
 
+## Ícono y pantalla de arranque
+
+El ícono es el logo del escritorio (tres cápsulas apiladas en `#716879`, `#AAA2B3` y
+`#E2DDE7` sobre `#17151C`). `scripts/generar-icono.py` lo dibuja en vectores con la misma
+geometría del CSS del escritorio y produce todas las variantes de `assets/`: el ícono
+clásico, el adaptativo de Android (logo dentro de la zona segura y fondo aparte), el
+monocromo para los íconos temáticos de Android 13+ y la imagen del splash. Si cambia el
+logo: `py -3 scripts/generar-icono.py` y volver a compilar.
+
 ## Decisiones
 
 - **El dinero en centavos enteros** también aquí (como `monto_centavos` en la base): nada de
