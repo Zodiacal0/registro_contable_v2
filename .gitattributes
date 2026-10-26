@@ -7,4 +7,3 @@ mvnw text eol=lf
 # Scripts de Windows: siempre CRLF
 *.cmd text eol=crlf
 *.bat text eol=crlf
-*.sh text eol=lf
