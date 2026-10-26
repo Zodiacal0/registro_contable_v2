@@ -66,16 +66,12 @@ final class VistaResumen extends ScrollPane implements Revelable {
     private GraficaDias grafica;
     private final Map<String, Node> itemsLeyenda = new HashMap<>();
 
-    // Carga tipo template: el esqueleto va encima del contenido y se desvanece al revelarlo
-    private final Esqueleto esqueleto = Esqueleto.resumen();
     private Animation revelando;
 
     VistaResumen(ModeloUi modelo) {
         this.modelo = modelo;
         contenido.getStyleClass().add("contenido");
-        var capas = new StackPane(contenido, esqueleto);
-        capas.setAlignment(Pos.TOP_CENTER);
-        setContent(capas);
+        setContent(contenido);
         setFitToWidth(true);
         setHbarPolicy(ScrollBarPolicy.NEVER);
         getStyleClass().add("vista");
@@ -117,7 +113,7 @@ final class VistaResumen extends ScrollPane implements Revelable {
         if (revelando != null) {
             revelando.stop(); // una revelación nueva reemplaza a la que iba a medias
         }
-        revelando = Movimiento.revelar(esqueleto, List.copyOf(contenido.getChildren()));
+        revelando = Movimiento.revelar(List.copyOf(contenido.getChildren()));
     }
 
     // ---- 1. Encabezado ----
@@ -311,7 +307,7 @@ final class VistaResumen extends ScrollPane implements Revelable {
             cuando.setAlignment(Pos.CENTER_LEFT);
             var tarjeta = new VBox(8, cuando,
                     Nodos.etiqueta(p.recurrencia().descripcion(), "cobro-nombre"),
-                    Nodos.etiqueta(Formato.monto(p.recurrencia().monto()), "cobro-monto"));
+                    Nodos.etiqueta(modelo.monto(p.recurrencia()), "cobro-monto"));
             tarjeta.getStyleClass().add("cobro-tarjeta");
             tarjeta.setMaxWidth(Double.MAX_VALUE);
             HBox.setHgrow(tarjeta, Priority.ALWAYS);
@@ -419,7 +415,7 @@ final class VistaResumen extends ScrollPane implements Revelable {
 
     /** Separador de día al estilo de las listas agrupadas de Apple, con el subtotal del día. */
     private Node cabeceraDia(LocalDate fecha, List<Gasto> gastos) {
-        BigDecimal subtotal = gastos.stream().map(Gasto::monto).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal subtotal = modelo.total(gastos); // en moneda principal
         var fila = new HBox(
                 Nodos.etiqueta(Formato.dia(fecha, modelo.hoy()), "tabla-dia"),
                 Nodos.espaciador(),
@@ -449,7 +445,7 @@ final class VistaResumen extends ScrollPane implements Revelable {
         var fila = new HBox(
                 columna(descripcion, -1, Pos.CENTER_LEFT),
                 columna(categoriaCol, COL_CATEGORIA, Pos.CENTER_LEFT),
-                columna(Nodos.etiqueta(Formato.monto(gasto.monto()), "celda-monto"), COL_MONTO, Pos.CENTER_RIGHT));
+                columna(Nodos.etiqueta(modelo.monto(gasto), "celda-monto"), COL_MONTO, Pos.CENTER_RIGHT));
         fila.getStyleClass().add("tabla-fila");
         Gasto seleccionado = modelo.seleccionadoProperty().get();
         if (seleccionado != null && Objects.equals(seleccionado.id(), gasto.id())) {

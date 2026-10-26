@@ -52,17 +52,38 @@ barras, sin depender de `Timeline` y `KeyValue`.
 
 ## Carga tipo template (esqueleto) y entrada en cascada
 
-Al abrir la app, cambiar de mes o cambiar de vista, se ve un instante el **esqueleto** de la
-pantalla (bloques con la forma del contenido, recorridos por un brillo). Después las secciones
-entran **en cascada**, cada una 70 ms después de la anterior, subiendo 14 px.
+Al abrir la app, cambiar de mes o cambiar de vista, las secciones entran **en cascada**:
+cada una 40 ms después de la anterior, subiendo 10 px, desde el primer cuadro.
 
-- **Es estético, no una espera real:** SQLite responde en microsegundos. Por eso el esqueleto
-  dura apenas unos 340 ms y, si navegas rápido entre meses (menos de 700 ms entre cambios), se
-  salta y solo queda la cascada.
+- **El esqueleto solo sale si hay espera real.** Al principio se mostraba siempre ~340 ms,
+  pero SQLite responde en milisegundos: era una carga fingida que hacía sentir lenta la app.
+  Ahora `Movimiento.esperar(esqueleto)` arranca un `PauseTransition` de 200 ms. Si los datos
+  llegan antes (`listo()`), se cancela y el esqueleto nunca aparece. Solo si la carga pasa de
+  200 ms se muestra, y se desvanece al llegar los datos. Por eso tiene sentido solo con cargas
+  en segundo plano (como Analíticas): si el hilo de la interfaz está bloqueado, tampoco
+  podría dibujarse.
 - **El brillo se pinta desde Java** (`Esqueleto.java`): un `AnimationTimer` mueve en cada
   cuadro el centro de un `LinearGradient` y se lo asigna como `Background` a cada bloque.
   Reescribir un estilo CSS 60 veces por segundo sería más caro (cada cambio de estilo se
   vuelve a parsear).
+## Por qué se sentía "a golpes" y qué cambió
+
+- **La curva.** Todas las entradas usaban `ease-out-expo` (0.16, 1, 0.3, 1), que hace el
+  60 % del recorrido en el primer 10 % del tiempo: eso se lee como un salto y luego un
+  arrastre. Ahora `Movimiento.SALIDA` es una desaceleración estándar (0, 0, 0.2, 1) y
+  `Movimiento.SUAVE` (0.4, 0, 0.2, 1) es ease-in-out, para lo que se abre o se mueve en su
+  lugar (bloques desplegables, el panel, el scroll).
+- **Bloques que se despliegan** (`Movimiento.desplegar`): "Se repite", "Va a una deuda o
+  meta", "Personalizada" y los interruptores de fecha de Metas y Deudas ya no aparecen de
+  golpe. El alto crece de 0 a su tamaño natural bajo un recorte, con fundido y un desliz de
+  6 px. Dos trampas que resolvió: el `VBox` mete su espaciado apenas el bloque ocupa lugar
+  (se compensa con un margen negativo animado), y hay que medir el bloque **después** de que
+  los listeners le pongan su contenido, o el alto medido no es el final y salta al terminar.
+- **El interruptor.** La perilla saltaba de lado por CSS (`-fx-alignment`). Ahora
+  `Campos.preparar` la desliza con `translateX` y el fondo cambia con una transición CSS.
+- **Transiciones CSS** (`transition`, JavaFX 23+): los colores de botones, chips, menú y
+  filas se funden al pasar el mouse o seleccionar, en vez de cambiar al instante. Solo
+  colores: tamaños y posiciones siempre se animan desde Java.
 - **`managed` ligado a `visible`:** en JavaFX un nodo invisible **sigue ocupando espacio**.
   Sin ese binding, el esqueleto oculto estiraría el área de scroll.
 - **Interfaz `Revelable`:** la ventana llama `revelar()` en la vista que entra sin saber cómo

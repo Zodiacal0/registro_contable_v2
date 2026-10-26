@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -27,25 +28,43 @@ public final class GastoServicio {
     private final GastoRepositorio gastos;
     private final CategoriaRepositorio categorias;
     private final Clock reloj;
+    /** Supplier y no Conversor: el tipo de cambio puede cambiar mientras la app corre. */
+    private final Supplier<Conversor> conversor;
 
     public GastoServicio(GastoRepositorio gastos, CategoriaRepositorio categorias, Clock reloj) {
+        this(gastos, categorias, () -> Conversor.SOLO_PRINCIPAL, reloj);
+    }
+
+    public GastoServicio(GastoRepositorio gastos, CategoriaRepositorio categorias, Supplier<Conversor> conversor,
+                         Clock reloj) {
         this.gastos = gastos;
         this.categorias = categorias;
+        this.conversor = conversor;
         this.reloj = reloj;
     }
 
     // ---- Gastos ----
 
     public Gasto registrar(String descripcion, BigDecimal monto, LocalDate fecha, String categoriaId) {
+        return registrar(descripcion, monto, fecha, categoriaId, null);
+    }
+
+    /** @param cuentaId de qué cuenta sale; el monto va en la moneda de esa cuenta (null = principal) */
+    public Gasto registrar(String descripcion, BigDecimal monto, LocalDate fecha, String categoriaId, String cuentaId) {
         validarCategoria(categoriaId);
-        var gasto = Gasto.nuevo(descripcion, monto, fecha, categoriaId, reloj.instant());
+        var gasto = Gasto.nuevo(descripcion, monto, fecha, categoriaId, cuentaId, reloj.instant());
         gastos.guardar(gasto);
         return gasto;
     }
 
     public Gasto editar(String id, String descripcion, BigDecimal monto, LocalDate fecha, String categoriaId) {
+        return editar(id, descripcion, monto, fecha, categoriaId, buscarActivo(id).cuentaId());
+    }
+
+    public Gasto editar(String id, String descripcion, BigDecimal monto, LocalDate fecha, String categoriaId,
+                        String cuentaId) {
         validarCategoria(categoriaId);
-        var editado = buscarActivo(id).editar(descripcion, monto, fecha, categoriaId, reloj.instant());
+        var editado = buscarActivo(id).editar(descripcion, monto, fecha, categoriaId, cuentaId, reloj.instant());
         gastos.guardar(editado);
         return editado;
     }
@@ -58,16 +77,26 @@ public final class GastoServicio {
         return gastos.listarEntre(mes.atDay(1), mes.atEndOfMonth());
     }
 
+    /** Suma en moneda principal (cada gasto convertido según su cuenta). */
     public BigDecimal total(List<Gasto> lista) {
-        return lista.stream().map(Gasto::monto).reduce(BigDecimal.ZERO, BigDecimal::add);
+        return total(lista, conversor.get());
+    }
+
+    public Conversor conversor() {
+        return conversor.get();
     }
 
     public ResumenMes resumen(YearMonth mes) {
+        Conversor conv = conversor.get(); // una sola foto para todo el resumen
         List<Gasto> delMes = delMes(mes);
         List<Categoria> activas = categorias();
-        BigDecimal total = total(delMes);
-        return new ResumenMes(mes, delMes, activas, total, total(delMes(mes.minusMonths(1))),
-                diasConsiderados(mes), porCategoria(delMes, activas, total));
+        BigDecimal total = total(delMes, conv);
+        return new ResumenMes(mes, delMes, activas, total, total(delMes(mes.minusMonths(1)), conv),
+                diasConsiderados(mes), porCategoria(delMes, activas, total, conv), conv);
+    }
+
+    private static BigDecimal total(List<Gasto> lista, Conversor conv) {
+        return lista.stream().map(conv::aPrincipal).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public LocalDate hoy() {
@@ -117,7 +146,8 @@ public final class GastoServicio {
         return mes.equals(YearMonth.from(hoy)) ? hoy.getDayOfMonth() : mes.lengthOfMonth();
     }
 
-    private static List<TotalCategoria> porCategoria(List<Gasto> gastos, List<Categoria> activas, BigDecimal total) {
+    static List<TotalCategoria> porCategoria(List<Gasto> gastos, List<Categoria> activas, BigDecimal total,
+                                             Conversor conv) {
         Map<String, Categoria> porId = activas.stream()
                 .collect(Collectors.toMap(Categoria::id, Function.identity()));
 
@@ -127,7 +157,7 @@ public final class GastoServicio {
 
         return grupos.entrySet().stream()
                 .map(e -> {
-                    BigDecimal suma = e.getValue().stream().map(Gasto::monto).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal suma = total(e.getValue(), conv);
                     return new TotalCategoria(e.getKey().orElse(null), suma, e.getValue().size(),
                             suma.divide(total, 4, RoundingMode.HALF_UP).doubleValue());
                 })

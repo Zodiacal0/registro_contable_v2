@@ -259,6 +259,25 @@
     -fx-max-height: 16;
 }
 
+/* ---------- Transiciones (JavaFX 23+: la propiedad CSS "transition") ----------
+   Los cambios de color por hover, selección o foco se funden en vez de saltar. Solo colores:
+   un cambio de tamaño o posición se anima desde Java (Movimiento), nunca desde aquí. */
+
+.boton,
+.chip,
+.nav-item,
+.lista-item,
+.segmento,
+.tabla-fila,
+.cobro-tarjeta {
+    transition: -fx-background-color 160ms ease-out, -fx-text-fill 160ms ease-out;
+}
+
+.chip .icono,
+.nav-item .icono {
+    transition: -fx-background-color 160ms ease-out;
+}
+
 /* ---------- Íconos (SVG en -fx-shape) ---------- */
 
 .icono {
@@ -1003,7 +1022,8 @@
     -fx-padding: 10 12;
 }
 
-/* Interruptor tipo iOS: la perilla se corre de izquierda a derecha con -fx-alignment */
+/* Interruptor tipo iOS. La perilla NO se mueve por CSS (sería un salto): la desliza
+   Movimiento.deslizarPerilla con translateX. El fondo sí cambia aquí, con transición. */
 .interruptor {
     -fx-background-color: -c-2;
     -fx-background-radius: 999px;
@@ -1015,11 +1035,11 @@
     -fx-max-height: 22;
     -fx-alignment: center-left;
     -fx-content-display: graphic-only;
+    transition: -fx-background-color 220ms ease-in-out;
 }
 
 .interruptor:selected {
     -fx-background-color: -c-5;
-    -fx-alignment: center-right;
 }
 
 .interruptor-perilla {
@@ -1029,6 +1049,7 @@
     -fx-min-height: 16;
     -fx-max-width: 16;
     -fx-max-height: 16;
+    transition: -fx-background-color 220ms ease-in-out;
 }
 
 .interruptor:selected .interruptor-perilla {
@@ -1267,4 +1288,251 @@
 .date-picker-popup .day-cell.selected {
     -fx-background-color: -c-5;
     -fx-text-fill: -c-0;
+}
+
+/* ---------- Cuentas ---------- */
+
+.icono-cuenta {
+    -fx-background-color: -c-4;
+}
+
+.lista-item-elegido .icono-cuenta {
+    -fx-background-color: -c-5;
+}
+
+/* "1 US$ = Q [7.70]": un campo chico de cifra, alineado a la derecha */
+.campo.campo-cambio {
+    -fx-pref-width: 72;
+    -fx-max-width: 72;
+    -fx-alignment: center-right;
+    -fx-font-family: "IBM Plex Mono Medium";
+    -fx-font-size: 13px;
+}
+
+.campo-cifra {
+    -fx-font-family: "IBM Plex Mono Medium";
+}
+
+.celda-fecha {
+    -fx-min-width: 64;
+    -fx-pref-width: 64;
+}
+
+.chip .icono-chico {
+    -fx-background-color: -c-4;
+}
+
+.chip:selected .icono-chico {
+    -fx-background-color: -c-5;
+}
+
+/* ---------- Analíticas ---------- */
+
+/* La frase de la meta bajo "Podrías ahorrar": el dato que hace accionable el número */
+.analitica-impacto {
+    -fx-text-fill: -c-5;
+    -fx-font-family: "Figtree Light Medium";
+    -fx-font-size: 14px;
+    -fx-background-color: rgba(226, 221, 231, 0.07);
+    -fx-background-radius: 12;
+    -fx-padding: 12 14;
+}
+
+.analitica-idea {
+    -fx-padding: 12 0;
+    -fx-border-color: transparent transparent -c-linea transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.analitica-puesto {
+    -fx-font-family: "IBM Plex Mono SemiBold";
+    -fx-font-size: 13px;
+    -fx-text-fill: -c-4;
+    -fx-min-width: 18;
+}
+
+.analitica-tarjeta {
+    -fx-background-color: -c-linea, -c-superficie;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 16, 15;
+    -fx-padding: 20 22;
+}
+
+.cifra-media {
+    -fx-font-family: "Figtree Light SemiBold";
+    -fx-font-size: 34px;
+}
+
+.cifra-media-decimales {
+    -fx-font-family: "Figtree Light SemiBold";
+    -fx-font-size: 20px;
+    -fx-text-fill: -c-4;
+}
+
+/* ---------- Gráficas de líneas (GraficaCurva) ---------- */
+
+/* Rejilla y ejes recesivos: el dato es la línea, no la cuadrícula */
+.grafica-rejilla {
+    -fx-stroke: rgba(226, 221, 231, 0.06);
+    -fx-stroke-width: 1;
+}
+
+.grafica-base {
+    -fx-stroke: rgba(226, 221, 231, 0.14);
+    -fx-stroke-width: 1;
+}
+
+.grafica-eje {
+    -fx-text-fill: -c-texto-3;
+    -fx-font-family: "IBM Plex Mono Medium";
+    -fx-font-size: 11px;
+}
+
+.grafica-leyenda {
+    -fx-text-fill: -c-4;
+    -fx-font-size: 12px;
+}
+
+.grafica-directa-nombre {
+    -fx-text-fill: -c-texto-3;
+    -fx-font-size: 11px;
+}
+
+.grafica-directa-valor {
+    -fx-text-fill: -c-5;
+    -fx-font-family: "IBM Plex Mono SemiBold";
+    -fx-font-size: 13px;
+}
+
+.grafica-guia {
+    -fx-stroke: rgba(226, 221, 231, 0.28);
+    -fx-stroke-width: 1;
+}
+
+/* Anillo del color del fondo alrededor de cada punto: separa el punto de la línea que lo cruza */
+.grafica-marcador {
+    -fx-stroke: -c-0;
+    -fx-stroke-width: 2;
+}
+
+.grafica-globo {
+    -fx-background-color: -c-linea, -c-1;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 12, 11;
+    -fx-padding: 10 12;
+    -fx-min-width: 180;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.45), 18, 0, 0, 6);
+}
+
+.grafica-globo-titulo {
+    -fx-text-fill: -c-4;
+    -fx-font-size: 12px;
+}
+
+.grafica-globo-muestra {
+    -fx-min-width: 10;
+    -fx-min-height: 3;
+    -fx-max-width: 10;
+    -fx-max-height: 3;
+    -fx-background-radius: 2;
+}
+
+.grafica-globo-nombre {
+    -fx-text-fill: -c-4;
+    -fx-font-size: 12px;
+}
+
+.grafica-globo-valor {
+    -fx-text-fill: -c-5;
+    -fx-font-family: "IBM Plex Mono Medium";
+    -fx-font-size: 13px;
+}
+
+/* Comparativo por categoría: barra (reciente) y marca fina (promedio) */
+.grafica-bala {
+    -fx-background-color: rgba(226, 221, 231, 0.06);
+    -fx-background-radius: 999;
+}
+
+.grafica-bala-barra {
+    -fx-background-radius: 999;
+}
+
+.grafica-bala-marca {
+    -fx-background-color: -c-5;
+    -fx-background-radius: 1;
+}
+
+.grafica-bala-muestra {
+    -fx-background-color: -c-4;
+    -fx-background-radius: 999;
+    -fx-min-width: 18;
+    -fx-min-height: 8;
+    -fx-max-width: 18;
+    -fx-max-height: 8;
+}
+
+.grafica-bala-marca-muestra {
+    -fx-background-color: -c-5;
+    -fx-background-radius: 1;
+    -fx-min-width: 2;
+    -fx-min-height: 14;
+    -fx-max-width: 2;
+    -fx-max-height: 14;
+}
+
+/* ---------- Presupuesto ---------- */
+
+/* Barra de distribución del sueldo: un tramo por bloque, la pista restante es lo libre */
+.distribucion {
+    -fx-background-color: rgba(226, 221, 231, 0.05);
+    -fx-background-radius: 999;
+}
+
+.distribucion-tramo {
+    -fx-background-radius: 999;
+}
+
+.distribucion-libre {
+    -fx-background-color: -c-linea, -c-0;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 999, 999;
+}
+
+.distribucion-libre-muestra {
+    -fx-background-color: -c-linea, -c-0;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 999, 999;
+    -fx-min-width: 10;
+    -fx-min-height: 10;
+    -fx-max-width: 10;
+    -fx-max-height: 10;
+}
+
+.pildora-tenue {
+    -fx-opacity: 0.55;
+}
+
+.campo.campo-tope {
+    -fx-pref-width: 110;
+    -fx-max-width: 110;
+    -fx-alignment: center-right;
+}
+
+/* Renglón para agregar una línea al plan: caja tenue, como "Se repite" en el panel */
+.plan-agregar {
+    -fx-background-color: -c-linea, -c-0;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 14, 13;
+    -fx-padding: 14 16;
+}
+
+/* Segmentado chico (quincena de cada línea del plan) */
+.segmentado-chico {
+    -fx-padding: 2;
+}
+
+.segmento.segmento-chico {
+    -fx-padding: 4 10;
+    -fx-font-size: 12px;
 }

@@ -9,6 +9,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
@@ -41,7 +42,6 @@ final class VistaRecurrentes extends StackPane implements Revelable {
     private final VBox detalle = new VBox(32);
     private final Label costo = Nodos.etiqueta("", "subtitulo");
     private final VBox columnaLista;
-    private final Esqueleto esqueleto = Esqueleto.categorias();
     private Animation revelando;
 
     VistaRecurrentes(ModeloUi modelo) {
@@ -65,7 +65,7 @@ final class VistaRecurrentes extends StackPane implements Revelable {
         DesplazamientoSuave.aplicar(columnaDetalle);
         HBox.setHgrow(columnaDetalle, Priority.ALWAYS);
 
-        getChildren().addAll(new HBox(columnaLista, columnaDetalle), esqueleto);
+        getChildren().add(new HBox(columnaLista, columnaDetalle));
         setAlignment(Pos.TOP_LEFT);
 
         modelo.resumenProperty().addListener((obs, anterior, resumen) -> pintar());
@@ -81,7 +81,7 @@ final class VistaRecurrentes extends StackPane implements Revelable {
         var secciones = new ArrayList<Node>();
         secciones.add(columnaLista);
         secciones.addAll(detalle.getChildren());
-        revelando = Movimiento.revelar(esqueleto, secciones);
+        revelando = Movimiento.revelar(secciones);
     }
 
     private void pintar() {
@@ -109,7 +109,7 @@ final class VistaRecurrentes extends StackPane implements Revelable {
                 : "En pausa";
         var textos = new VBox(2, Nodos.etiqueta(r.descripcion(), "leyenda-nombre"), Nodos.etiqueta(estado, "leyenda-detalle"));
         textos.setMinWidth(0); // si falta espacio se recorta el texto...
-        var monto = Nodos.etiqueta(Formato.monto(r.monto()), "leyenda-monto");
+        var monto = Nodos.etiqueta(modelo.monto(r), "leyenda-monto");
         monto.setMinWidth(Region.USE_PREF_SIZE); // ...nunca el monto
 
         var item = new HBox(12, muestra(r), textos, Nodos.espaciador(), monto);
@@ -141,7 +141,7 @@ final class VistaRecurrentes extends StackPane implements Revelable {
     }
 
     private Node encabezado(Recurrencia r) {
-        String resumen = Formato.monto(r.monto()) + "  ·  " + Formato.frecuencia(r) + "  ·  "
+        String resumen = modelo.monto(r) + "  ·  " + Formato.frecuencia(r) + "  ·  "
                 + (r.activa()
                         ? "próximo cobro " + Formato.dia(r.proximoCobro(modelo.hoy()), modelo.hoy()).toLowerCase()
                         : "en pausa");
@@ -182,6 +182,13 @@ final class VistaRecurrentes extends StackPane implements Revelable {
         monto.getStyleClass().add("campo");
         var frecuencia = new SelectorFrecuencia();
         frecuencia.establecer(r.cada(), r.unidad());
+        DatePicker inicio = Campos.fecha(r.inicio());
+        var avisoInicio = Nodos.etiqueta("Se rehace el historial: se quitan los cobros que ya no caen en el "
+                + "nuevo calendario y se registran los que falten hasta hoy.", "leyenda-detalle");
+        avisoInicio.setWrapText(true);
+        avisoInicio.setMinHeight(Region.USE_PREF_SIZE);
+        avisoInicio.visibleProperty().bind(inicio.valueProperty().isNotEqualTo(r.inicio()));
+        avisoInicio.managedProperty().bind(avisoInicio.visibleProperty());
 
         var grupo = new ToggleGroup();
         var chips = new FlowPane(8, 8);
@@ -203,7 +210,8 @@ final class VistaRecurrentes extends StackPane implements Revelable {
         var guardar = Nodos.boton("Guardar cambios", () -> {
             try {
                 modelo.editarRecurrencia(r.id(), descripcion.getText(), Formato.leerMonto(monto.getText()),
-                        (Categoria) grupo.getSelectedToggle().getUserData(), frecuencia.cada(), frecuencia.unidad());
+                        (Categoria) grupo.getSelectedToggle().getUserData(), frecuencia.cada(), frecuencia.unidad(),
+                        inicio.getValue());
             } catch (IllegalArgumentException e) {
                 error.setText(e.getMessage());
             }
@@ -213,9 +221,10 @@ final class VistaRecurrentes extends StackPane implements Revelable {
         HBox.setHgrow(montoYDescripcion.getChildren().getFirst(), Priority.ALWAYS);
 
         return new VBox(16,
-                encabezadoSeccion("Editar", "Los cambios aplican a los próximos cobros"),
+                encabezadoSeccion("Editar", "Monto y frecuencia aplican a los próximos cobros"),
                 montoYDescripcion,
                 campo("Frecuencia", frecuencia),
+                new VBox(8, campo("Primer cobro", inicio), avisoInicio),
                 campo("Categoría", chips),
                 error,
                 guardar);
@@ -234,14 +243,14 @@ final class VistaRecurrentes extends StackPane implements Revelable {
         }
         for (Gasto cobro : cobros) {
             var fecha = Nodos.etiqueta(Formato.dia(cobro.fecha(), modelo.hoy()), "celda");
-            var fila = new HBox(fecha, Nodos.espaciador(), Nodos.etiqueta(Formato.monto(cobro.monto()), "celda-monto"));
+            var fila = new HBox(fecha, Nodos.espaciador(), Nodos.etiqueta(modelo.monto(cobro), "celda-monto"));
             fila.setAlignment(Pos.CENTER_LEFT);
             fila.getStyleClass().add("tabla-fila");
             fila.setOnMouseClicked(e -> modelo.seleccionadoProperty().set(cobro)); // se edita en el panel
             tabla.getChildren().add(fila);
         }
         String detalle = cobros.isEmpty() ? "" : (cobros.size() == 1 ? "1 cobro" : cobros.size() + " cobros")
-                + "  ·  " + Formato.monto(total) + " en total";
+                + "  ·  " + Formato.monto(total, modelo.monedaDe(r.cuentaId())) + " en total";
         return new VBox(14, encabezadoSeccion("Cobros registrados", detalle), tabla);
     }
 

@@ -13,6 +13,7 @@ import java.util.UUID;
 /**
  * Un gasto que se repite: Netflix cada mes, el dominio cada año, el agua cada 2 meses.
  *
+ * @param cuentaId      de qué cuenta salen sus cobros; null = la principal
  * @param cada          cuántas unidades entre cobros (1 = cada mes si la unidad es MESES)
  * @param inicio        fecha del primer cobro; todas las demás se calculan desde aquí
  * @param generadaHasta hasta qué fecha ya se generaron sus gastos; null = ninguno todavía
@@ -23,6 +24,7 @@ public record Recurrencia(
         String descripcion,
         BigDecimal monto,
         String categoriaId,
+        String cuentaId,
         int cada,
         Unidad unidad,
         LocalDate inicio,
@@ -46,11 +48,17 @@ public record Recurrencia(
         Objects.requireNonNull(unidad, "unidad");
         descripcion = Montos.textoObligatorio(descripcion, "La descripción no puede estar vacía");
         monto = Montos.positivo(monto);
+        cuentaId = cuentaId == null ? Cuenta.PRINCIPAL_ID : cuentaId;
     }
 
     public static Recurrencia nueva(String descripcion, BigDecimal monto, String categoriaId,
                                     int cada, Unidad unidad, LocalDate inicio, Instant ahora) {
-        return new Recurrencia(UUID.randomUUID().toString(), descripcion, monto, categoriaId,
+        return nueva(descripcion, monto, categoriaId, null, cada, unidad, inicio, ahora);
+    }
+
+    public static Recurrencia nueva(String descripcion, BigDecimal monto, String categoriaId, String cuentaId,
+                                    int cada, Unidad unidad, LocalDate inicio, Instant ahora) {
+        return new Recurrencia(UUID.randomUUID().toString(), descripcion, monto, categoriaId, cuentaId,
                 cada, unidad, inicio, null, true, ahora, false);
     }
 
@@ -75,6 +83,25 @@ public record Recurrencia(
             }
         }
         return fechas;
+    }
+
+    /** Si en esa fecha cae un cobro de esta recurrencia. */
+    public boolean esCobro(LocalDate fecha) {
+        for (int k = 0; !cobro(k).isAfter(fecha); k++) {
+            if (cobro(k).equals(fecha)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * La misma recurrencia con otro primer cobro. El calendario cambia, así que se olvida hasta
+     * dónde se había generado: hay que volver a revisar desde el nuevo inicio.
+     */
+    public Recurrencia conInicio(LocalDate nuevoInicio, Instant ahora) {
+        return new Recurrencia(id, descripcion, monto, categoriaId, cuentaId, cada, unidad, nuevoInicio,
+                null, activa, ahora, eliminado);
     }
 
     /** Primer cobro en la fecha dada o después. */
@@ -106,17 +133,17 @@ public record Recurrencia(
 
     public Recurrencia editar(String descripcion, BigDecimal monto, String categoriaId,
                               int cada, Unidad unidad, Instant ahora) {
-        return new Recurrencia(id, descripcion, monto, categoriaId, cada, unidad, inicio,
+        return new Recurrencia(id, descripcion, monto, categoriaId, cuentaId, cada, unidad, inicio,
                 generadaHasta, activa, ahora, eliminado);
     }
 
     public Recurrencia generadaHasta(LocalDate fecha, Instant ahora) {
-        return new Recurrencia(id, descripcion, monto, categoriaId, cada, unidad, inicio,
+        return new Recurrencia(id, descripcion, monto, categoriaId, cuentaId, cada, unidad, inicio,
                 fecha, activa, ahora, eliminado);
     }
 
     public Recurrencia pausar(Instant ahora) {
-        return new Recurrencia(id, descripcion, monto, categoriaId, cada, unidad, inicio,
+        return new Recurrencia(id, descripcion, monto, categoriaId, cuentaId, cada, unidad, inicio,
                 generadaHasta, false, ahora, eliminado);
     }
 
@@ -127,12 +154,12 @@ public record Recurrencia(
     public Recurrencia reanudar(LocalDate hoy, Instant ahora) {
         LocalDate ayer = hoy.minusDays(1);
         LocalDate desde = generadaHasta == null || generadaHasta.isBefore(ayer) ? ayer : generadaHasta;
-        return new Recurrencia(id, descripcion, monto, categoriaId, cada, unidad, inicio,
+        return new Recurrencia(id, descripcion, monto, categoriaId, cuentaId, cada, unidad, inicio,
                 desde, true, ahora, eliminado);
     }
 
     public Recurrencia eliminar(Instant ahora) {
-        return new Recurrencia(id, descripcion, monto, categoriaId, cada, unidad, inicio,
+        return new Recurrencia(id, descripcion, monto, categoriaId, cuentaId, cada, unidad, inicio,
                 generadaHasta, false, ahora, true);
     }
 }

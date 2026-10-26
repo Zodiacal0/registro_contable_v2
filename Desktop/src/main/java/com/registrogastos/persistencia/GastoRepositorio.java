@@ -26,8 +26,8 @@ public final class GastoRepositorio {
 
     private static final String INSERTAR = """
             INSERT INTO gastos (id, descripcion, monto_centavos, fecha, categoria_id, recurrencia_id,
-                                deuda_id, creado_en, actualizado_en, eliminado)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                deuda_id, cuenta_id, creado_en, actualizado_en, eliminado)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
     /** Inserta o, si el id ya existe, actualiza ("upsert"). */
@@ -38,6 +38,7 @@ public final class GastoRepositorio {
                     monto_centavos = excluded.monto_centavos,
                     fecha = excluded.fecha,
                     categoria_id = excluded.categoria_id,
+                    cuenta_id = excluded.cuenta_id,
                     actualizado_en = excluded.actualizado_en,
                     eliminado = excluded.eliminado
                 """, gasto);
@@ -62,9 +63,10 @@ public final class GastoRepositorio {
             ps.setString(5, gasto.categoriaId());   // null -> NULL en SQL
             ps.setString(6, gasto.recurrenciaId());
             ps.setString(7, gasto.deudaId());
-            ps.setLong(8, gasto.creadoEn().toEpochMilli());
-            ps.setLong(9, gasto.actualizadoEn().toEpochMilli());
-            ps.setInt(10, gasto.eliminado() ? 1 : 0);
+            ps.setString(8, gasto.cuentaId());
+            ps.setLong(9, gasto.creadoEn().toEpochMilli());
+            ps.setLong(10, gasto.actualizadoEn().toEpochMilli());
+            ps.setInt(11, gasto.eliminado() ? 1 : 0);
             return ps.executeUpdate(); // filas afectadas: 0 si DO NOTHING no insertó
         } catch (SQLException e) {
             throw new ErrorDePersistencia("No se pudo guardar el gasto " + gasto.id(), e);
@@ -79,6 +81,11 @@ public final class GastoRepositorio {
     /** Abonos (gastos) hechos a una deuda, del más reciente al más antiguo. */
     public List<Gasto> listarPorDeuda(String deudaId) {
         return listarPor("deuda_id", deudaId);
+    }
+
+    /** Gastos que salieron de una cuenta, del más reciente al más antiguo. */
+    public List<Gasto> listarPorCuenta(String cuentaId) {
+        return listarPor("cuenta_id", cuentaId);
     }
 
     /** @param columna nombre fijo del código (nunca texto del usuario): es seguro ponerlo en el SQL */
@@ -142,6 +149,7 @@ public final class GastoRepositorio {
                 rs.getString("categoria_id"),
                 rs.getString("recurrencia_id"),
                 rs.getString("deuda_id"),
+                rs.getString("cuenta_id"),
                 Instant.ofEpochMilli(rs.getLong("creado_en")),
                 Instant.ofEpochMilli(rs.getLong("actualizado_en")),
                 rs.getInt("eliminado") == 1);

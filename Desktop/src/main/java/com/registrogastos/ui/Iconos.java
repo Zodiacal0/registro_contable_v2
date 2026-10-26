@@ -20,6 +20,12 @@ enum Iconos {
     META("M5 3h2v18H5zM8 4h11l-2.6 4.5L19 13H8z"),
     // Tarjeta: banda superior y cuerpo separados por un hueco (la "banda magnética")
     DEUDA("M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1H3zM3 10.5h18V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM6 14.5v2h5v-2z"),
+    // Billetera: cuerpo con una muesca a la derecha (el broche) y la solapa arriba
+    CUENTA("M6 4.5h11v2H6zM4 8h16v3h-4.5a2 2 0 0 0 0 4H20v4H4zM15.2 12.2h2v1.6h-2z"),
+    // Barras que crecen sobre una base: analíticas
+    ANALITICAS("M4 19h16v1.6H4zM5 13h3.2v5H5zM10.4 9h3.2v9h-3.2zM15.8 5H19v13h-3.2z"),
+    // Libreta de cuentas: hoja con una fila ancha arriba y casillas abajo
+    PRESUPUESTO("M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM8 6h8v3H8zM8 11h3v2H8zM13 11h3v2h-3zM8 15h3v2H8zM13 15h3v2h-3z"),
     OCULTAR_PANEL("M5.6 4.6 4 6.2 9.8 12 4 17.8 5.6 19.4 13 12zM12.6 4.6 11 6.2 16.8 12 11 17.8 12.6 19.4 20 12z"),
     SUBE("M12 6 19 17H5z"),
     BAJA("M5 7h14l-7 11z"),

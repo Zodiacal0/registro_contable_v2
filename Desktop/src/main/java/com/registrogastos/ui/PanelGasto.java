@@ -1,8 +1,10 @@
 package com.registrogastos.ui;
 
 import com.registrogastos.dominio.Categoria;
+import com.registrogastos.dominio.Cuenta;
 import com.registrogastos.dominio.Deuda;
 import com.registrogastos.dominio.Gasto;
+import com.registrogastos.servicio.EstadoCuenta;
 import com.registrogastos.servicio.EstadoDeuda;
 import com.registrogastos.servicio.EstadoMeta;
 import javafx.animation.FadeTransition;
@@ -48,6 +50,13 @@ final class PanelGasto extends VBox {
     private final DatePicker fecha = new DatePicker();
     private final FlowPane chips = new FlowPane(8, 8);
     private final ToggleGroup categorias = new ToggleGroup();
+    // De qué cuenta sale: solo se muestra si hay más de una. El monto va en la moneda de la cuenta
+    private final FlowPane chipsCuenta = new FlowPane(8, 8);
+    private final ToggleGroup grupoCuentas = new ToggleGroup();
+    private final VBox campoCuenta;
+    private final Label etiquetaMonto = Nodos.etiqueta("Monto", "campo-etiqueta");
+    /** La última cuenta usada: al registrar varios gastos seguidos casi siempre es la misma. */
+    private String ultimaCuentaId = Cuenta.PRINCIPAL_ID;
     private final Label error = Nodos.etiqueta("", "error");
     private final Label aviso = Nodos.etiqueta("", "aviso");
     private final PauseTransition apagarAviso = new PauseTransition(Duration.seconds(4));
@@ -87,7 +96,7 @@ final class PanelGasto extends VBox {
         var encabezado = new HBox(6, titulo, Nodos.espaciador(), salirEdicion, ocultar);
         encabezado.setAlignment(Pos.CENTER_LEFT);
 
-        cajaMonto.getChildren().addAll(Nodos.etiqueta("Monto", "campo-etiqueta"), monto);
+        cajaMonto.getChildren().addAll(etiquetaMonto, monto);
         cajaMonto.getStyleClass().add("caja-monto");
         // Todo el recuadro se comporta como el campo: un clic en cualquier parte pone el cursor
         cajaMonto.setOnMouseClicked(e -> monto.requestFocus());
@@ -111,6 +120,15 @@ final class PanelGasto extends VBox {
         apagarAviso.setOnFinished(e -> aviso.setText(""));
 
         cajaRepetir = construirRepetir();
+        campoCuenta = new VBox(8, Nodos.etiqueta("Sale de", "campo-etiqueta"), chipsCuenta);
+        campoCuenta.managedProperty().bind(campoCuenta.visibleProperty());
+        grupoCuentas.selectedToggleProperty().addListener((obs, anterior, nueva) -> {
+            if (nueva == null && grupoCuentas.getToggles().contains(anterior)) {
+                anterior.setSelected(true);
+            }
+            var moneda = modelo.monedaDe(cuentaElegidaId());
+            etiquetaMonto.setText(moneda.esPrincipal() ? "Monto" : "Monto en " + moneda.nombre().toLowerCase());
+        });
         cajaDestino = construirDestino();
 
         var hoy = new HBox(new VBox(2, Nodos.etiqueta("Hoy", "hoy-titulo"), hoyDetalle), Nodos.espaciador(), hoyTotal);
@@ -124,6 +142,7 @@ final class PanelGasto extends VBox {
                 new VBox(8, cajaMonto, errorMonto),
                 campo("Descripción", descripcion),
                 new VBox(8, etiquetaFecha, fecha),
+                campoCuenta,
                 campo("Categoría", chips),
                 cajaRepetir,
                 cajaDestino,
@@ -149,7 +168,8 @@ final class PanelGasto extends VBox {
             if (activo) {
                 Platform.runLater(() -> {
                     double desde = desplazable.getVvalue();
-                    Movimiento.progreso(Duration.millis(320), f -> desplazable.setVvalue(desde + (1 - desde) * f));
+                    Movimiento.progreso(Duration.millis(340), Movimiento.SUAVE,
+                            f -> desplazable.setVvalue(desde + (1 - desde) * f));
                 });
             }
         });
@@ -171,6 +191,7 @@ final class PanelGasto extends VBox {
         modelo.seleccionadoProperty().addListener((obs, anterior, gasto) -> cargar(gasto));
         modelo.resumenProperty().addListener((obs, anterior, resumen) -> {
             pintarChips(categoriaElegidaId());
+            pintarCuentas(cuentaElegidaId());
             pintarDestinos();
             pintarHoy();
         });
@@ -183,8 +204,7 @@ final class PanelGasto extends VBox {
      * "Primer cobro" y el botón "Crear recurrente".
      */
     private VBox construirRepetir() {
-        frecuencia.visibleProperty().bind(repetir.selectedProperty());
-        frecuencia.managedProperty().bind(frecuencia.visibleProperty());
+        Movimiento.desplegarCon(frecuencia, repetir.selectedProperty());
         etiquetaFecha.textProperty().bind(Bindings.when(repetir.selectedProperty())
                 .then("Primer cobro").otherwise("Fecha"));
         repetir.selectedProperty().addListener((obs, antes, activo) -> {
@@ -207,8 +227,6 @@ final class PanelGasto extends VBox {
      */
     private VBox construirDestino() {
         var opciones = new VBox(10, destinos, ayudaDestino);
-        opciones.visibleProperty().bind(destinar.selectedProperty());
-        opciones.managedProperty().bind(opciones.visibleProperty());
         ayudaDestino.setWrapText(true);
         ayudaDestino.setMinHeight(Region.USE_PREF_SIZE);
 
@@ -218,6 +236,8 @@ final class PanelGasto extends VBox {
             }
             alCambiarDestino();
         });
+        // Después del listener de arriba: cuando se mide el bloque, la ayuda ya tiene su texto
+        Movimiento.desplegarCon(opciones, destinar.selectedProperty());
         // Igual que con las categorías: siempre queda un destino elegido
         grupoDestinos.selectedToggleProperty().addListener((obs, anterior, nuevo) -> {
             if (nuevo == null && grupoDestinos.getToggles().contains(anterior)) {
@@ -234,12 +254,7 @@ final class PanelGasto extends VBox {
 
     /** Ícono, texto y un interruptor tipo iOS; toda la fila lo activa, no solo la perilla. */
     private static HBox filaInterruptor(ToggleButton interruptor, Iconos icono, String texto) {
-        var perilla = new Region();
-        perilla.getStyleClass().add("interruptor-perilla");
-        interruptor.setGraphic(perilla);
-        interruptor.getStyleClass().add("interruptor");
-        interruptor.setAccessibleText(texto);
-
+        Campos.preparar(interruptor, texto);
         var fila = new HBox(10, icono.crear("icono-chico"), Nodos.etiqueta(texto, "interruptor-texto"),
                 Nodos.espaciador(), interruptor);
         fila.setAlignment(Pos.CENTER_LEFT);
@@ -308,6 +323,7 @@ final class PanelGasto extends VBox {
         boolean aMeta = destino instanceof EstadoMeta;
         descripcion.setDisable(aMeta);
         chips.setDisable(aMeta);
+        chipsCuenta.setDisable(aMeta); // un aporte aparta dinero, no sale de una cuenta
         ayudaDestino.setText(switch (destino) {
             case EstadoDeuda d -> "Saldo pendiente " + Formato.monto(d.saldo()) + ". El abono cuenta como gasto.";
             case EstadoMeta m -> "Faltan " + Formato.monto(m.restante()) + ". Se aparta para la meta: no cuenta como gasto.";
@@ -334,7 +350,7 @@ final class PanelGasto extends VBox {
     /** Lo gastado hoy: el contexto que importa al anotar el siguiente gasto. */
     private void pintarHoy() {
         var deHoy = modelo.gastosDeHoy();
-        hoyTotal.setText(Formato.monto(deHoy.stream().map(Gasto::monto).reduce(BigDecimal.ZERO, BigDecimal::add)));
+        hoyTotal.setText(Formato.monto(modelo.total(deHoy)));
         hoyDetalle.setText(switch (deHoy.size()) {
             case 0 -> "Nada registrado aún";
             case 1 -> "1 gasto";
@@ -395,18 +411,47 @@ final class PanelGasto extends VBox {
             descripcion.setText(gasto.descripcion());
             fecha.setValue(gasto.fecha());
             pintarChips(gasto.categoriaId());
+            pintarCuentas(gasto.cuentaId());
         } else {
             monto.clear();
             descripcion.clear();
             fecha.setValue(modelo.hoy());
             pintarChips(null);
+            pintarCuentas(ultimaCuentaId);
         }
 
         // Transición corta al cambiar de modo: el panel "respira" en vez de saltar
-        var fundido = new FadeTransition(Duration.millis(160), contenido);
-        fundido.setFromValue(0.35);
+        var fundido = new FadeTransition(Duration.millis(260), contenido);
+        fundido.setFromValue(0.55);
         fundido.setToValue(1);
+        fundido.setInterpolator(Movimiento.SUAVE);
         fundido.play();
+    }
+
+    private void pintarCuentas(String cuentaId) {
+        grupoCuentas.getToggles().clear();
+        chipsCuenta.getChildren().clear();
+        for (EstadoCuenta e : modelo.cuentas()) {
+            Cuenta c = e.cuenta();
+            String texto = c.moneda().esPrincipal() ? c.nombre() : c.nombre() + " · " + c.moneda().simbolo();
+            var chip = new ToggleButton(texto, Iconos.CUENTA.crear("icono-chico"));
+            chip.getStyleClass().addAll("chip", "chip-cuenta");
+            chip.setUserData(c);
+            chip.setToggleGroup(grupoCuentas);
+            chipsCuenta.getChildren().add(chip);
+        }
+        grupoCuentas.getToggles().stream()
+                .filter(t -> ((Cuenta) t.getUserData()).id().equals(cuentaId))
+                .findFirst()
+                .or(() -> grupoCuentas.getToggles().stream().findFirst())
+                .ifPresent(t -> t.setSelected(true));
+        campoCuenta.setVisible(modelo.cuentas().size() > 1);
+    }
+
+    /** La cuenta elegida; si no hay chips (una sola cuenta), la principal. */
+    private String cuentaElegidaId() {
+        var elegida = grupoCuentas.getSelectedToggle();
+        return elegida != null && elegida.getUserData() instanceof Cuenta c ? c.id() : Cuenta.PRINCIPAL_ID;
     }
 
     private void pintarChips(String categoriaId) {
@@ -450,6 +495,9 @@ final class PanelGasto extends VBox {
                 : descripcion.getText();
         try {
             Gasto editado = modelo.seleccionadoProperty().get();
+            if (editado == null) {
+                ultimaCuentaId = cuentaElegidaId();
+            }
             Object destino = editado == null ? destino() : null;
             if (destino instanceof EstadoMeta m) {
                 modelo.aportar(m.meta().id(), valor, fecha.getValue());
@@ -461,7 +509,8 @@ final class PanelGasto extends VBox {
                         .orElse(""));
                 limpiarCaptura();
             } else if (destino instanceof EstadoDeuda d) {
-                modelo.abonarDeuda(d.deuda().id(), valor, fecha.getValue(), categoria, descripcion.getText());
+                modelo.abonarDeuda(d.deuda().id(), valor, fecha.getValue(), categoria, descripcion.getText(),
+                        cuentaElegidaId());
                 avisar(modelo.deuda(d.deuda().id())
                         .map(e -> e.saldada()
                                 ? "Deuda saldada: " + d.deuda().nombre() + "."
@@ -470,20 +519,20 @@ final class PanelGasto extends VBox {
                 limpiarCaptura();
             } else if (editado == null && repetir.isSelected()) {
                 // Crea la recurrencia; si el primer cobro es hoy o antes, ya queda registrado
-                modelo.crearRecurrencia(texto, valor, fecha.getValue(), categoria,
+                modelo.crearRecurrencia(texto, valor, fecha.getValue(), categoria, cuentaElegidaId(),
                         frecuencia.cada(), frecuencia.unidad());
                 monto.clear();
                 descripcion.clear();
                 repetir.setSelected(false);
                 monto.requestFocus();
             } else if (editado == null) {
-                modelo.registrar(texto, valor, fecha.getValue(), categoria);
+                modelo.registrar(texto, valor, fecha.getValue(), categoria, cuentaElegidaId());
                 // Captura en ráfaga: se limpian monto y descripción, se conservan fecha y categoría
                 monto.clear();
                 descripcion.clear();
                 monto.requestFocus();
             } else {
-                modelo.editar(editado.id(), texto, valor, fecha.getValue(), categoria);
+                modelo.editar(editado.id(), texto, valor, fecha.getValue(), categoria, cuentaElegidaId());
             }
         } catch (IllegalArgumentException e) {
             // Validaciones del dominio (p. ej. monto en cero o mayor al saldo): van junto al monto

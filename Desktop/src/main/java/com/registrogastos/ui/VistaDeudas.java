@@ -153,7 +153,7 @@ final class VistaDeudas extends VistaListaDetalle {
         DatePicker fecha = Campos.fecha(modelo.hoy());
         var error = etiquetaError();
         Runnable abonar = () -> ejecutar(error, () ->
-                modelo.abonarDeuda(deuda.id(), Formato.leerMonto(monto.getText()), fecha.getValue(), null, null));
+                modelo.abonarDeuda(deuda.id(), Formato.leerMonto(monto.getText()), fecha.getValue(), null, null, null));
         monto.setOnAction(e -> abonar.run());
 
         var fila = new HBox(10, Campos.etiquetado("Monto", monto), Campos.etiquetado("Fecha", fecha));
@@ -196,8 +196,7 @@ final class VistaDeudas extends VistaListaDetalle {
                 ? modelo.hoy().plusMonths(6) : deuda.fechaLimite());
         var conLimite = Campos.interruptor("Con fecha límite");
         conLimite.setSelected(!nueva && deuda.fechaLimite() != null);
-        limite.visibleProperty().bind(conLimite.selectedProperty());
-        limite.managedProperty().bind(limite.visibleProperty());
+        Movimiento.desplegarCon(limite, conLimite.selectedProperty());
         var filaLimite = new HBox(10, Nodos.etiqueta("Con fecha límite", "interruptor-texto"), Nodos.espaciador(), conLimite);
         filaLimite.setAlignment(Pos.CENTER_LEFT);
 

@@ -61,6 +61,9 @@ public final class VentanaPrincipal {
     private final VistaRecurrentes vistaRecurrentes;
     private final VistaMetas vistaMetas;
     private final VistaDeudas vistaDeudas;
+    private final VistaCuentas vistaCuentas;
+    private final VistaAnaliticas vistaAnaliticas;
+    private final VistaPresupuesto vistaPresupuesto;
     private final PanelGasto panel;
 
     /** Si el panel de captura está abierto. Se recuerda entre sesiones. */
@@ -78,6 +81,9 @@ public final class VentanaPrincipal {
         this.vistaRecurrentes = new VistaRecurrentes(modelo);
         this.vistaMetas = new VistaMetas(modelo);
         this.vistaDeudas = new VistaDeudas(modelo);
+        this.vistaCuentas = new VistaCuentas(modelo);
+        this.vistaAnaliticas = new VistaAnaliticas(modelo);
+        this.vistaPresupuesto = new VistaPresupuesto(modelo);
         this.panel = new PanelGasto(modelo, () -> panelVisible.set(false));
 
         marco.setLeft(riel());
@@ -166,7 +172,7 @@ public final class VentanaPrincipal {
         recorte.heightProperty().bind(panel.heightProperty());
         panel.setClip(recorte);
 
-        Movimiento.progreso(Duration.millis(300), f -> {
+        Movimiento.progreso(Duration.millis(360), Movimiento.SUAVE, f -> {
             double t = abrir ? f : 1 - f;
             fijarAnchoPanel(ANCHO_PANEL * t);
             panel.setOpacity(t);
@@ -245,8 +251,11 @@ public final class VentanaPrincipal {
     private VBox riel() {
         var grupo = new ToggleGroup();
         var resumen = itemNavegacion("Resumen", Iconos.RESUMEN, grupo, vistaResumen);
+        var presupuesto = itemNavegacion("Presupuesto", Iconos.PRESUPUESTO, grupo, vistaPresupuesto);
+        var analiticas = itemNavegacion("Analíticas", Iconos.ANALITICAS, grupo, vistaAnaliticas);
         var categorias = itemNavegacion("Categorías", Iconos.CATEGORIAS, grupo, vistaCategorias);
         var recurrentes = itemNavegacion("Recurrentes", Iconos.REPETIR, grupo, vistaRecurrentes);
+        var cuentas = itemNavegacion("Cuentas", Iconos.CUENTA, grupo, vistaCuentas);
         var metas = itemNavegacion("Metas", Iconos.META, grupo, vistaMetas);
         var deudas = itemNavegacion("Deudas", Iconos.DEUDA, grupo, vistaDeudas);
         resumen.setSelected(true);
@@ -259,7 +268,7 @@ public final class VentanaPrincipal {
 
         var relleno = new Region();
         VBox.setVgrow(relleno, Priority.ALWAYS);
-        var riel = new VBox(10, resumen, categorias, recurrentes, metas, deudas, botonCapturar(), relleno);
+        var riel = new VBox(10, resumen, presupuesto, analiticas, categorias, recurrentes, cuentas, metas, deudas, botonCapturar(), relleno);
         riel.setAlignment(Pos.TOP_CENTER);
         riel.getStyleClass().add("riel");
         return riel;
@@ -286,7 +295,7 @@ public final class VentanaPrincipal {
             if (ahora) {
                 marco.setCenter(vista);
                 if (vista instanceof Revelable revelable) {
-                    revelable.revelar(); // esqueleto + cascada
+                    revelable.revelar(); // entrada en cascada
                 }
             }
         });

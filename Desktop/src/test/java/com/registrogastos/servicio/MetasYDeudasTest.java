@@ -104,8 +104,8 @@ class MetasYDeudasTest {
     @Test
     void elAbonoDesdeElPanelUsaLaDescripcionDelUsuarioOLaDeLaDeuda() {
         var tarjeta = deudas.crear("Tarjeta", Deuda.Tipo.DEBO, new BigDecimal("1000"), HOY, null);
-        String propio = deudas.abonar(tarjeta.id(), new BigDecimal("100"), HOY, null, "Cuota octubre");
-        String vacio = deudas.abonar(tarjeta.id(), new BigDecimal("50"), HOY, null, "  ");
+        String propio = deudas.abonar(tarjeta.id(), new BigDecimal("100"), HOY, null, "Cuota octubre", null);
+        String vacio = deudas.abonar(tarjeta.id(), new BigDecimal("50"), HOY, null, "  ", null);
 
         var mes = gastos.delMes(YearMonth.of(2026, 10));
         assertEquals("Cuota octubre", mes.stream().filter(g -> g.id().equals(propio)).findFirst().orElseThrow().descripcion());

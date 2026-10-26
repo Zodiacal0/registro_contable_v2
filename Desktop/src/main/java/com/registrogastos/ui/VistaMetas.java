@@ -159,8 +159,7 @@ final class VistaMetas extends VistaListaDetalle {
                 ? modelo.hoy().plusMonths(6) : meta.fechaObjetivo());
         var conFecha = Campos.interruptor("Con fecha objetivo");
         conFecha.setSelected(!nueva && meta.fechaObjetivo() != null);
-        fecha.visibleProperty().bind(conFecha.selectedProperty());
-        fecha.managedProperty().bind(fecha.visibleProperty());
+        Movimiento.desplegarCon(fecha, conFecha.selectedProperty());
         var filaFecha = new HBox(10, Nodos.etiqueta("Con fecha objetivo", "interruptor-texto"), Nodos.espaciador(), conFecha);
         filaFecha.setAlignment(Pos.CENTER_LEFT);
 

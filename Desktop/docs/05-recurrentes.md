@@ -70,3 +70,18 @@ contra duplicados es el id determinístico.
 10 nuevas: 5 de dominio (`RecurrenciaTest`: fechas sin deriva, anual, cada 15 días, costo
 mensual, id determinístico) y 5 de servicio (`RecurrenciaServicioTest`: cobros al crear, no
 duplicar, no revivir lo borrado, pausa y reanudación, costo de las activas). Total: 39.
+
+## Cambiar el primer cobro
+
+Al editar una recurrente se puede elegir **"Primer cobro"**. Monto, frecuencia y categoría
+solo cambian los cobros futuros. Mover el primer cobro, en cambio, **rehace el calendario**
+(`RecurrenciaServicio.editar` con `inicio`):
+
+1. Los cobros registrados que caen en el calendario nuevo se conservan, aunque los hayas
+   editado.
+2. Los que ya no caen se eliminan con borrado lógico.
+3. Se registran los que falten desde el nuevo inicio hasta hoy.
+
+Gracias a los ids determinísticos ("recurrencia|fecha"), regenerar nunca duplica. Detalle que
+apareció en la prueba: el `UPDATE` del repositorio no incluía `inicio`, porque antes nunca
+cambiaba. Lo cubre `RecurrenciaServicioTest.moverElPrimerCobroRehaceElHistorial`.

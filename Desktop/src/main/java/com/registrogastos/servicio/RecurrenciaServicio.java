@@ -35,8 +35,15 @@ public final class RecurrenciaServicio {
     /** Crea la recurrencia y registra de inmediato los cobros que ya vencieron (incluido hoy). */
     public Recurrencia crear(String descripcion, BigDecimal monto, String categoriaId,
                              int cada, Recurrencia.Unidad unidad, LocalDate primerCobro) {
+        return crear(descripcion, monto, categoriaId, null, cada, unidad, primerCobro);
+    }
+
+    /** @param cuentaId de qué cuenta salen los cobros; null = la principal */
+    public Recurrencia crear(String descripcion, BigDecimal monto, String categoriaId, String cuentaId,
+                             int cada, Recurrencia.Unidad unidad, LocalDate primerCobro) {
         validarCategoria(categoriaId);
-        var nueva = Recurrencia.nueva(descripcion, monto, categoriaId, cada, unidad, primerCobro, reloj.instant());
+        var nueva = Recurrencia.nueva(descripcion, monto, categoriaId, cuentaId, cada, unidad, primerCobro,
+                reloj.instant());
         recurrencias.guardar(nueva);
         generarPendientes();
         return buscar(nueva.id());
@@ -45,8 +52,37 @@ public final class RecurrenciaServicio {
     /** Cambia los cobros futuros; los ya registrados quedan como estaban. */
     public Recurrencia editar(String id, String descripcion, BigDecimal monto, String categoriaId,
                               int cada, Recurrencia.Unidad unidad) {
+        return editar(id, descripcion, monto, categoriaId, cada, unidad, null);
+    }
+
+    /**
+     * Como {@link #editar(String, String, BigDecimal, String, int, Recurrencia.Unidad)}, pero
+     * además puede mover el primer cobro. Si {@code inicio} cambia, se rehace el calendario:
+     * <ul>
+     *   <li>los cobros registrados que caen en el calendario nuevo se conservan;</li>
+     *   <li>los que ya no caen se eliminan (borrado lógico);</li>
+     *   <li>se registran los que falten desde el nuevo inicio hasta hoy.</li>
+     * </ul>
+     * Como el id de cada cobro sale de "recurrencia|fecha", regenerar nunca duplica.
+     *
+     * @param inicio nuevo primer cobro; null = el mismo
+     */
+    public Recurrencia editar(String id, String descripcion, BigDecimal monto, String categoriaId,
+                              int cada, Recurrencia.Unidad unidad, LocalDate inicio) {
         validarCategoria(categoriaId);
-        var editada = buscar(id).editar(descripcion, monto, categoriaId, cada, unidad, reloj.instant());
+        var actual = buscar(id);
+        var editada = actual.editar(descripcion, monto, categoriaId, cada, unidad, reloj.instant());
+        if (inicio != null && !inicio.equals(actual.inicio())) {
+            editada = editada.conInicio(inicio, reloj.instant());
+            for (Gasto cobro : gastos.listarPorRecurrencia(id)) {
+                if (!editada.esCobro(cobro.fecha())) {
+                    gastos.guardar(cobro.eliminar(reloj.instant()));
+                }
+            }
+            recurrencias.guardar(editada);
+            generarPendientes();
+            return buscar(id);
+        }
         recurrencias.guardar(editada);
         return editada;
     }
@@ -108,9 +144,14 @@ public final class RecurrenciaServicio {
 
     /** Lo que suman por mes las recurrencias activas (aproximado para las que no son mensuales). */
     public BigDecimal costoMensual() {
+        return costoMensual(Conversor.SOLO_PRINCIPAL);
+    }
+
+    /** En moneda principal: cada recurrencia se convierte según la moneda de su cuenta. */
+    public BigDecimal costoMensual(Conversor conv) {
         return recurrencias.listar().stream()
                 .filter(Recurrencia::activa)
-                .map(Recurrencia::costoMensual)
+                .map(r -> conv.aPrincipal(r.costoMensual(), conv.monedaDe(r.cuentaId())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 

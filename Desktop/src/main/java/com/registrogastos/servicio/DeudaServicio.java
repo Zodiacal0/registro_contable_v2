@@ -58,7 +58,7 @@ public final class DeudaServicio {
     }
 
     public String abonar(String deudaId, BigDecimal monto, LocalDate fecha, String categoriaId) {
-        return abonar(deudaId, monto, fecha, categoriaId, null);
+        return abonar(deudaId, monto, fecha, categoriaId, null, null);
     }
 
     /**
@@ -67,9 +67,11 @@ public final class DeudaServicio {
      *
      * @param categoriaId solo para DEBO: la categoría del gasto (puede ser null)
      * @param descripcion solo para DEBO: la del gasto; null o vacía = "Abono · nombre"
+     * @param cuentaId    solo para DEBO: de qué cuenta sale el abono; null = la principal
      * @return el id del registro creado (el gasto o el cobro)
      */
-    public String abonar(String deudaId, BigDecimal monto, LocalDate fecha, String categoriaId, String descripcion) {
+    public String abonar(String deudaId, BigDecimal monto, LocalDate fecha, String categoriaId,
+                         String descripcion, String cuentaId) {
         var deuda = buscar(deudaId);
         BigDecimal saldo = new EstadoDeuda(deuda, pagado(deuda)).saldo();
         if (monto.compareTo(saldo) > 0) {
@@ -79,7 +81,7 @@ public final class DeudaServicio {
             if (categoriaId != null && categorias.buscarPorId(categoriaId).filter(c -> !c.eliminado()).isEmpty()) {
                 throw new IllegalArgumentException("La categoría no existe o fue eliminada");
             }
-            var gasto = Gasto.abono(deuda, descripcion, monto, fecha, categoriaId, reloj.instant());
+            var gasto = Gasto.abono(deuda, descripcion, monto, fecha, categoriaId, cuentaId, reloj.instant());
             gastos.guardar(gasto);
             return gasto.id();
         }

@@ -16,8 +16,8 @@ import java.util.ArrayList;
 
 /**
  * Esqueleto común de las vistas "lista + detalle" (biblioteca de Steam): columna izquierda con
- * título, subtítulo, una acción opcional y la lista; a la derecha, el detalle con scroll; y
- * encima, el esqueleto de carga. Las subclases solo implementan {@link #pintar()}.
+ * título, subtítulo, una acción opcional y la lista; a la derecha, el detalle con scroll.
+ * Las subclases solo implementan {@link #pintar()}.
  *
  * Ojo con el orden de construcción: el constructor de esta clase corre ANTES de que la
  * subclase inicialice sus propios campos. Por eso aquí no se llama a pintar(): si lo hiciera,
@@ -33,7 +33,6 @@ abstract class VistaListaDetalle extends StackPane implements Revelable {
 
     private final VBox columnaLista;
     private final VBox accion = new VBox();
-    private final Esqueleto esqueleto = Esqueleto.categorias();
     private Animation revelando;
 
     protected VistaListaDetalle(ModeloUi modelo, String titulo) {
@@ -59,7 +58,7 @@ abstract class VistaListaDetalle extends StackPane implements Revelable {
         DesplazamientoSuave.aplicar(columnaDetalle);
         HBox.setHgrow(columnaDetalle, Priority.ALWAYS);
 
-        getChildren().addAll(new HBox(columnaLista, columnaDetalle), esqueleto);
+        getChildren().add(new HBox(columnaLista, columnaDetalle));
         setAlignment(Pos.TOP_LEFT);
         modelo.resumenProperty().addListener((obs, anterior, resumen) -> pintar());
     }
@@ -87,7 +86,7 @@ abstract class VistaListaDetalle extends StackPane implements Revelable {
         var secciones = new ArrayList<Node>();
         secciones.add(columnaLista);
         secciones.addAll(detalle.getChildren());
-        revelando = Movimiento.revelar(esqueleto, secciones);
+        revelando = Movimiento.revelar(secciones);
     }
 
     // ---- Piezas comunes ----

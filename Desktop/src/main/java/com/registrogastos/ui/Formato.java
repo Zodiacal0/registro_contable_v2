@@ -1,5 +1,6 @@
 package com.registrogastos.ui;
 
+import com.registrogastos.dominio.Moneda;
 import com.registrogastos.dominio.Recurrencia;
 
 import java.math.BigDecimal;
@@ -27,6 +28,17 @@ final class Formato {
     static String monto(BigDecimal monto) {
         // DecimalFormat no es thread-safe: se crea uno por llamada en vez de compartirlo
         return new DecimalFormat("#,##0.00", DecimalFormatSymbols.getInstance()).format(monto);
+    }
+
+    /** La moneda principal va sin símbolo (es la de todos los totales); las demás lo llevan. */
+    static String monto(BigDecimal monto, Moneda moneda) {
+        return moneda.esPrincipal() ? monto(monto) : moneda.simbolo() + " " + monto(monto);
+    }
+
+    /** Siempre con símbolo: para la vista de cuentas, donde conviven monedas lado a lado. */
+    static String montoConSimbolo(BigDecimal monto, Moneda moneda) {
+        String texto = moneda.simbolo() + " " + monto(monto.abs());
+        return monto.signum() < 0 ? "−" + texto : texto;
     }
 
     /**
@@ -130,7 +142,7 @@ final class Formato {
         return Math.round(proporcion * 100) + "%";
     }
 
-    private static String capitalizar(String texto) {
+    static String capitalizar(String texto) {
         return texto.isEmpty() ? texto : Character.toUpperCase(texto.charAt(0)) + texto.substring(1);
     }
 }

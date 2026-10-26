@@ -31,8 +31,7 @@ final class SelectorFrecuencia extends VBox {
 
         var detalle = new HBox(8, Nodos.etiqueta("Cada", "campo-etiqueta"), cantidad, dias, meses);
         detalle.setAlignment(Pos.CENTER_LEFT);
-        detalle.visibleProperty().bind(personalizada.selectedProperty());
-        detalle.managedProperty().bind(detalle.visibleProperty());
+        Movimiento.desplegarCon(detalle, personalizada.selectedProperty());
 
         getChildren().addAll(new HBox(8, mensual, anual, personalizada), detalle);
         mantenerUnoElegido(tipos);

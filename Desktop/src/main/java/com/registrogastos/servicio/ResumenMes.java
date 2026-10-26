@@ -16,7 +16,11 @@ import java.util.Optional;
  * Foto inmutable de un mes: todo lo que la pantalla de resumen necesita, ya calculado.
  * La UI no suma ni agrupa: solo pinta esto.
  *
+ * Los totales están en moneda principal; cada gasto conserva su monto original (en la moneda
+ * de su cuenta) y {@link #enPrincipal(Gasto)} lo convierte.
+ *
  * @param diasConsiderados días para el promedio: hoy si es el mes en curso, si no el mes completo
+ * @param conversor        la foto de monedas con que se calcularon los totales
  */
 public record ResumenMes(
         YearMonth mes,
@@ -25,7 +29,8 @@ public record ResumenMes(
         BigDecimal total,
         BigDecimal totalMesAnterior,
         int diasConsiderados,
-        List<TotalCategoria> porCategoria) {
+        List<TotalCategoria> porCategoria,
+        Conversor conversor) {
 
     public ResumenMes {
         // Copias defensivas: quien construyó el resumen ya no puede modificar sus listas
@@ -53,13 +58,22 @@ public record ResumenMes(
         var dias = new ArrayList<>(Collections.nCopies(mes.lengthOfMonth(), BigDecimal.ZERO));
         for (Gasto gasto : gastos) {
             int i = gasto.fecha().getDayOfMonth() - 1;
-            dias.set(i, dias.get(i).add(gasto.monto()));
+            dias.set(i, dias.get(i).add(enPrincipal(gasto)));
         }
         return List.copyOf(dias);
     }
 
     public Optional<Gasto> mayorGasto() {
-        return gastos.stream().max(Comparator.comparing(Gasto::monto));
+        return gastos.stream().max(Comparator.comparing(this::enPrincipal));
+    }
+
+    public BigDecimal enPrincipal(Gasto gasto) {
+        return conversor.aPrincipal(gasto);
+    }
+
+    /** Si algún gasto del mes está en otra moneda (para avisar que el total está convertido). */
+    public boolean hayOtraMoneda() {
+        return gastos.stream().anyMatch(g -> !conversor.monedaDe(g).esPrincipal());
     }
 
     /** Categoría activa por id; vacío si es null o fue eliminada. */

@@ -28,6 +28,11 @@ public final class Montos {
         return conDosDecimales(monto);
     }
 
+    /** Cualquier signo, incluido cero (p. ej. el saldo inicial de una cuenta). */
+    public static BigDecimal dosDecimales(BigDecimal monto) {
+        return conDosDecimales(monto);
+    }
+
     /** Texto sin espacios sobrantes, o lanza con el mensaje dado (completo: el género varía). */
     public static String textoObligatorio(String texto, String mensajeSiFalta) {
         if (texto == null || texto.isBlank()) {

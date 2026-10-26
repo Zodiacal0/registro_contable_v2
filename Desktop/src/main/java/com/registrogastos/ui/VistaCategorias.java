@@ -37,7 +37,6 @@ import java.util.stream.Collectors;
 final class VistaCategorias extends StackPane implements Revelable {
 
     private final ModeloUi modelo;
-    private final Esqueleto esqueleto = Esqueleto.categorias();
     private final VBox columnaLista;
     private Animation revelando;
     /** Id de la categoría abierta en el detalle; null = la primera de la lista. */
@@ -82,9 +81,7 @@ final class VistaCategorias extends StackPane implements Revelable {
         DesplazamientoSuave.aplicar(columnaDetalle);
         HBox.setHgrow(columnaDetalle, Priority.ALWAYS);
 
-        // Capas: las dos columnas y, encima, el esqueleto de carga
-        var columnas = new HBox(columnaLista, columnaDetalle);
-        getChildren().addAll(columnas, esqueleto);
+        getChildren().add(new HBox(columnaLista, columnaDetalle));
         setAlignment(Pos.TOP_LEFT);
         getStyleClass().add("biblioteca");
 
@@ -93,7 +90,7 @@ final class VistaCategorias extends StackPane implements Revelable {
         pintar();
     }
 
-    /** Al entrar a la vista: esqueleto y luego la lista y cada bloque del detalle en cascada. */
+    /** Al entrar a la vista: la lista y cada bloque del detalle en cascada. */
     @Override
     public void revelar() {
         if (revelando != null) {
@@ -102,7 +99,7 @@ final class VistaCategorias extends StackPane implements Revelable {
         var secciones = new ArrayList<Node>();
         secciones.add(columnaLista);
         secciones.addAll(detalle.getChildren());
-        revelando = Movimiento.revelar(esqueleto, secciones);
+        revelando = Movimiento.revelar(secciones);
     }
 
     private void pintar() {
@@ -188,7 +185,7 @@ final class VistaCategorias extends StackPane implements Revelable {
         // Sus días: el mismo componente del resumen, alimentado solo con sus gastos
         var resumenCategoria = new ResumenMes(r.mes(), gastos, r.categorias(),
                 total.map(TotalCategoria::total).orElse(BigDecimal.ZERO), BigDecimal.ZERO,
-                r.diasConsiderados(), List.of());
+                r.diasConsiderados(), List.of(), r.conversor());
         var dias = new VBox(14,
                 new GraficaDias(r.mes(), resumenCategoria.porDia(), resumenCategoria.promedioDiario(), modelo.hoy(),
                         false, null),
@@ -216,7 +213,7 @@ final class VistaCategorias extends StackPane implements Revelable {
         var fecha = Nodos.etiqueta(Formato.fechaCorta(gasto.fecha(), modelo.hoy()), "celda");
         fecha.setMinWidth(90);
         var fila = new HBox(fecha, Nodos.etiqueta(gasto.descripcion(), "celda-titulo"), Nodos.espaciador(),
-                Nodos.etiqueta(Formato.monto(gasto.monto()), "celda-monto"));
+                Nodos.etiqueta(modelo.monto(gasto), "celda-monto"));
         fila.setAlignment(Pos.CENTER_LEFT);
         fila.getStyleClass().add("tabla-fila");
         fila.setOnMouseClicked(e -> modelo.seleccionadoProperty().set(gasto)); // se edita en el panel

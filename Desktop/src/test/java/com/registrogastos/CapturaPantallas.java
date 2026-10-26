@@ -1,7 +1,11 @@
 package com.registrogastos;
 
+import com.registrogastos.dominio.Cuenta;
 import com.registrogastos.dominio.Deuda;
+import com.registrogastos.dominio.LineaPlan;
+import com.registrogastos.dominio.Moneda;
 import com.registrogastos.dominio.Recurrencia;
+import com.registrogastos.servicio.CuentaServicio;
 import com.registrogastos.servicio.DeudaServicio;
 import com.registrogastos.servicio.GastoServicio;
 import com.registrogastos.servicio.MetaServicio;
@@ -78,9 +82,9 @@ public final class CapturaPantallas extends Application {
                                 () -> System.out.println("Sin popup. Ventanas: " + Window.getWindows())),
                 () -> ((DatePicker) escena.getRoot().lookup(".date-picker")).hide(),
                 ventana::nuevoGasto,
-                () -> ((ToggleButton) escena.getRoot().lookupAll(".nav-item").toArray()[1]).fire(),
+                () -> ir("Categorías"),
                 () -> capturar(escena.getRoot(), "4-categorias"),
-                () -> ((ToggleButton) escena.getRoot().lookupAll(".nav-item").toArray()[2]).fire(),
+                () -> ir("Recurrentes"),
                 () -> {
                     // El panel con "Se repite" activado, junto a la vista de recurrentes
                     ((ToggleButton) escena.getRoot().lookup(".repetir")).fire();
@@ -90,10 +94,10 @@ public final class CapturaPantallas extends Application {
                 },
                 () -> ((ToggleButton) escena.getRoot().lookup(".repetir")).fire(),
                 // Metas y deudas: un paso extra de espera para que termine la entrada en cascada
-                () -> ((ToggleButton) escena.getRoot().lookupAll(".nav-item").toArray()[3]).fire(),
+                () -> ir("Metas"),
                 () -> { },
                 () -> capturar(escena.getRoot(), "4c-metas"),
-                () -> ((ToggleButton) escena.getRoot().lookupAll(".nav-item").toArray()[4]).fire(),
+                () -> ir("Deudas"),
                 () -> { },
                 () -> capturar(escena.getRoot(), "4d-deudas"),
                 // El panel con "Va a una deuda o meta": primero una deuda, luego una meta
@@ -109,7 +113,26 @@ public final class CapturaPantallas extends Application {
                     ((Button) escena.getRoot().lookup(".boton-ancho")).fire();
                 },
                 () -> capturar(escena.getRoot(), "4g-aporte-hecho"),
-                () -> ((ToggleButton) escena.getRoot().lookupAll(".nav-item").toArray()[0]).fire(),
+                // Cuentas y analíticas (el análisis corre en otro hilo: un paso extra de espera)
+                () -> ir("Cuentas"),
+                () -> { },
+                () -> capturar(escena.getRoot(), "4h-cuentas"),
+                () -> ir("Presupuesto"),
+                () -> capturar(escena.getRoot(), "4k-presupuesto"),
+                () -> escena.getRoot().lookupAll(".vista").stream()
+                        .filter(n -> n.getClass().getSimpleName().equals("VistaPresupuesto"))
+                        .findFirst().ifPresent(n -> ((ScrollPane) n).setVvalue(1)),
+                () -> capturar(escena.getRoot(), "4l-presupuesto-abajo"),
+                () -> ir("Analíticas"),
+                () -> { },
+                () -> capturar(escena.getRoot(), "4i-analiticas"),
+                () -> desplazarAnaliticas(0.22),
+                () -> capturar(escena.getRoot(), "4i2-analiticas-ritmo"),
+                () -> desplazarAnaliticas(0.45),
+                () -> capturar(escena.getRoot(), "4i3-analiticas-flujo"),
+                () -> desplazarAnaliticas(1),
+                () -> capturar(escena.getRoot(), "4j-analiticas-abajo"),
+                () -> ir("Resumen"),
                 modelo::mesSiguiente,
                 () -> capturar(escena.getRoot(), "5-mes-vacio"),
                 // Registrar sin monto: el error debe salir junto al campo
@@ -132,14 +155,6 @@ public final class CapturaPantallas extends Application {
                 modelo::quitarFiltros,
                 ventana::ocultarPanel,
                 () -> capturar(escena.getRoot(), "11-panel-oculto"),
-                // Esqueleto de carga: se captura a mitad de su vida (dura ~560 ms)
-                () -> {
-                    modelo.mesAnterior();
-                    var espera = new PauseTransition(Duration.millis(170));
-                    espera.setOnFinished(e -> capturar(escena.getRoot(), "12-esqueleto"));
-                    espera.play();
-                },
-                modelo::irAMesActual,
                 ventana::nuevoGasto, // deja el panel visible: la preferencia se guarda para el usuario real
                 Platform::exit));
         siguiente(pasos);
@@ -237,10 +252,78 @@ public final class CapturaPantallas extends Application {
         var concierto = d.crear("Carlos · entradas del concierto", Deuda.Tipo.ME_DEBEN, new BigDecimal("120"),
                 hoy.minusDays(10), null);
         d.abonar(concierto.id(), new BigDecimal("40"), hoy.minusDays(2), null);
+
+        // Cuentas: la principal (Efectivo) ya existe; un banco, una tarjeta y una cuenta en dólares
+        CuentaServicio c = servicios.cuentas();
+        c.editar(Cuenta.PRINCIPAL_ID, "Efectivo", Cuenta.Tipo.EFECTIVO, new BigDecimal("1500"));
+        var banco = c.crear("Banco Industrial", Cuenta.Tipo.BANCO, Moneda.GTQ, new BigDecimal("4200"));
+        var visa = c.crear("Tarjeta Visa", Cuenta.Tipo.TARJETA, Moneda.GTQ, new BigDecimal("-850"));
+        var dolares = c.crear("Ahorro en dólares", Cuenta.Tipo.BANCO, Moneda.USD, new BigDecimal("600"));
+        for (int mes = 0; mes < 6; mes++) {
+            c.registrarIngreso(banco.id(), "Salario", new BigDecimal(mes == 3 ? "7200" : "6500"),
+                    hoy.minusMonths(mes).withDayOfMonth(1));
+        }
+        c.registrarIngreso(Cuenta.PRINCIPAL_ID, "Venta de la bici vieja", new BigDecimal("900"), hoy.minusMonths(2));
+        c.transferir(banco.id(), Cuenta.PRINCIPAL_ID, new BigDecimal("800"), null, hoy.minusDays(9));
+        c.transferir(banco.id(), dolares.id(), new BigDecimal("770"), null, hoy.minusDays(20));
+        s.registrar("Supermercado", new BigDecimal("212.40"), hoy.minusDays(3), comida, banco.id());
+        s.registrar("Juego en Steam", new BigDecimal("12.99"), hoy.minusDays(6), ocio, dolares.id());
+
+        // Presupuesto: el sueldo, lo que normalmente gasta y a qué asigna lo disponible
+        var plan = servicios.presupuestos();
+        plan.fijarIngresoMensual(new BigDecimal("6500"));
+        plan.fijarQuincenal(true);
+        var primera = LineaPlan.Quincena.PRIMERA;
+        var segunda = LineaPlan.Quincena.SEGUNDA;
+        plan.cambiarQuincena(plan.agregar("Renta", new BigDecimal("2200"), LineaPlan.Grupo.GASTO).id(), primera);
+        plan.agregar("Comida", new BigDecimal("1200"), LineaPlan.Grupo.GASTO);
+        plan.cambiarQuincena(plan.agregar("Luz y agua", new BigDecimal("280"), LineaPlan.Grupo.GASTO).id(), segunda);
+        plan.agregar("Transporte", new BigDecimal("450"), LineaPlan.Grupo.GASTO);
+        plan.cambiarQuincena(plan.agregar("Internet y celular", new BigDecimal("320"), LineaPlan.Grupo.GASTO).id(), segunda);
+        plan.cambiarQuincena(plan.agregar("Tarjeta de crédito", new BigDecimal("300"), LineaPlan.Grupo.GASTO).id(), segunda);
+        plan.cambiarQuincena(plan.agregar("Ahorro", new BigDecimal("800"), LineaPlan.Grupo.ASIGNACION).id(), segunda);
+        plan.agregar("Fondo de emergencia", new BigDecimal("350"), LineaPlan.Grupo.ASIGNACION);
+
+        // Hábitos para Analíticas: cafés, Ubers y snacks repartidos en los últimos tres meses,
+        // y Ocio que sube este mes frente a su costumbre
+        for (int i = 0; i < 12; i++) {
+            registrar(s, "Café de especialidad", "4.50", hoy.minusDays(i * 7L + 2), comida);
+        }
+        for (int i = 0; i < 9; i++) {
+            s.registrar("Uber al trabajo", new BigDecimal("6.80"), hoy.minusDays(i * 9L + 3), transporte, visa.id());
+        }
+        for (int i = 0; i < 7; i++) {
+            registrar(s, "Snack", "3.25", hoy.minusDays(i * 11L + 5), comida);
+        }
+        // Historia de los tres meses anteriores, para que "Subieron" compare contra una costumbre real
+        for (int mes = 1; mes <= 5; mes++) {
+            var dia = hoy.minusMonths(mes).withDayOfMonth(5);
+            s.registrar("Supermercado", new BigDecimal("190.00"), dia, comida, banco.id());
+            registrar(s, "Almuerzo", "38.00", dia.plusDays(8), comida);
+            registrar(s, "Gasolina", "48.00", dia.plusDays(2), transporte);
+            registrar(s, "Luz", "60.00", dia.plusDays(4), hogar);
+            registrar(s, "Cine", "18.00", dia.plusDays(10), ocio);
+        }
     }
 
     private static void registrar(GastoServicio s, String descripcion, String monto, LocalDate fecha, String categoria) {
         s.registrar(descripcion, new BigDecimal(monto), fecha, categoria);
+    }
+
+    /** VistaAnaliticas es privada del paquete ui: se reconoce por el nombre de su clase. */
+    private void desplazarAnaliticas(double vvalue) {
+        escena.getRoot().lookupAll(".vista").stream()
+                .filter(n -> n.getClass().getSimpleName().equals("VistaAnaliticas"))
+                .findFirst().ifPresent(n -> ((ScrollPane) n).setVvalue(vvalue));
+    }
+
+    /** Cambia de vista con el botón del riel que tiene ese texto (no por posición: el riel crece). */
+    private void ir(String texto) {
+        escena.getRoot().lookupAll(".nav-item").stream()
+                .map(ToggleButton.class::cast)
+                .filter(b -> b.getText().equals(texto))
+                .findFirst().orElseThrow()
+                .fire();
     }
 
     /** Requiere -Djavafx.enablePreview=true en la línea de comandos (ver App.activarPreview). */

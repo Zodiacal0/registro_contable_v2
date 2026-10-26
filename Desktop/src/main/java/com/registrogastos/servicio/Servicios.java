@@ -8,5 +8,8 @@ public record Servicios(
         GastoServicio gastos,
         RecurrenciaServicio recurrencias,
         MetaServicio metas,
-        DeudaServicio deudas) {
+        DeudaServicio deudas,
+        CuentaServicio cuentas,
+        AnaliticaServicio analitica,
+        PresupuestoServicio presupuestos) {
 }

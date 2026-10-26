@@ -99,4 +99,23 @@ class RecurrenciaServicioTest {
         recurrencias.pausar(dominio.id());
         assertEquals(new BigDecimal("15.49"), recurrencias.costoMensual());
     }
+
+    @Test
+    void moverElPrimerCobroRehaceElHistorial() {
+        var netflix = netflixDesdeAgosto(); // cobros: 5 ago, 5 sep, 5 oct
+
+        // En realidad empezó el 20 de junio: 20 jun, 20 jul, 20 ago, 20 sep, 20 oct
+        recurrencias.editar(netflix.id(), "Netflix", new BigDecimal("15.49"), null, 1, Recurrencia.Unidad.MESES,
+                LocalDate.of(2026, 6, 20));
+
+        var cobros = recurrencias.cobrosDe(netflix.id());
+        assertEquals(5, cobros.size());
+        assertTrue(cobros.stream().allMatch(g -> g.fecha().getDayOfMonth() == 20)); // los del día 5 se quitaron
+        assertEquals(1, gastos.delMes(YearMonth.of(2026, 10)).size());
+
+        // Volver a guardar con el mismo inicio no toca nada
+        recurrencias.editar(netflix.id(), "Netflix", new BigDecimal("15.49"), null, 1, Recurrencia.Unidad.MESES,
+                LocalDate.of(2026, 6, 20));
+        assertEquals(5, recurrencias.cobrosDe(netflix.id()).size());
+    }
 }

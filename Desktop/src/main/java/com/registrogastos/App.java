@@ -1,16 +1,24 @@
 package com.registrogastos;
 
 import com.registrogastos.persistencia.AbonoRepositorio;
+import com.registrogastos.persistencia.AjustesRepositorio;
 import com.registrogastos.persistencia.BaseDeDatos;
 import com.registrogastos.persistencia.CategoriaRepositorio;
+import com.registrogastos.persistencia.CuentaRepositorio;
 import com.registrogastos.persistencia.DeudaRepositorio;
 import com.registrogastos.persistencia.GastoRepositorio;
+import com.registrogastos.persistencia.IngresoRepositorio;
 import com.registrogastos.persistencia.MetaRepositorio;
+import com.registrogastos.persistencia.LineaPlanRepositorio;
 import com.registrogastos.persistencia.Migrador;
 import com.registrogastos.persistencia.RecurrenciaRepositorio;
+import com.registrogastos.persistencia.TransferenciaRepositorio;
+import com.registrogastos.servicio.AnaliticaServicio;
+import com.registrogastos.servicio.CuentaServicio;
 import com.registrogastos.servicio.DeudaServicio;
 import com.registrogastos.servicio.GastoServicio;
 import com.registrogastos.servicio.MetaServicio;
+import com.registrogastos.servicio.PresupuestoServicio;
 import com.registrogastos.servicio.RecurrenciaServicio;
 import com.registrogastos.servicio.Servicios;
 import com.registrogastos.ui.ModeloUi;
@@ -70,12 +78,25 @@ public final class App extends Application {
         var gastos = new GastoRepositorio(baseDeDatos);
         var categorias = new CategoriaRepositorio(baseDeDatos);
         var reloj = Clock.systemDefaultZone();
+        var ingresos = new IngresoRepositorio(baseDeDatos);
+        var ajustes = new AjustesRepositorio(baseDeDatos);
+        var cuentas = new CuentaServicio(new CuentaRepositorio(baseDeDatos), ingresos,
+                new TransferenciaRepositorio(baseDeDatos), gastos, ajustes, reloj);
+        // cuentas::conversor es un Supplier: cada resumen pide la foto de monedas del momento
+        var gastoServicio = new GastoServicio(gastos, categorias, cuentas::conversor, reloj);
+        var recurrencias = new RecurrenciaServicio(new RecurrenciaRepositorio(baseDeDatos), gastos, categorias, reloj);
+        var metas = new MetaServicio(new MetaRepositorio(baseDeDatos), AbonoRepositorio.aportes(baseDeDatos), reloj);
+        var deudas = new DeudaServicio(new DeudaRepositorio(baseDeDatos), AbonoRepositorio.cobrosDeuda(baseDeDatos),
+                gastos, categorias, reloj);
         return new Servicios(
-                new GastoServicio(gastos, categorias, reloj),
-                new RecurrenciaServicio(new RecurrenciaRepositorio(baseDeDatos), gastos, categorias, reloj),
-                new MetaServicio(new MetaRepositorio(baseDeDatos), AbonoRepositorio.aportes(baseDeDatos), reloj),
-                new DeudaServicio(new DeudaRepositorio(baseDeDatos), AbonoRepositorio.cobrosDeuda(baseDeDatos),
-                        gastos, categorias, reloj));
+                gastoServicio,
+                recurrencias,
+                metas,
+                deudas,
+                cuentas,
+                new AnaliticaServicio(gastos, ingresos, gastoServicio, recurrencias, metas, cuentas::conversor, reloj),
+                new PresupuestoServicio(new LineaPlanRepositorio(baseDeDatos), ajustes, ingresos, gastoServicio,
+                        recurrencias, cuentas::conversor, reloj));
     }
 
     public static void main(String[] args) {

@@ -55,13 +55,24 @@ final class Campos {
     }
 
     /** Interruptor tipo iOS (estilo .interruptor en estilos.css). */
+    /** Ancho 40 − relleno 3+3 − perilla 16 = cuánto viaja la perilla (ver .interruptor en el CSS). */
+    private static final double RECORRIDO_PERILLA = 18;
+
+    /** Interruptor tipo iOS. La perilla se desliza animada; el fondo cambia por transición CSS. */
     static ToggleButton interruptor(String descripcion) {
+        var interruptor = new ToggleButton();
+        preparar(interruptor, descripcion);
+        return interruptor;
+    }
+
+    /** Convierte un ToggleButton ya creado (p. ej. un campo del panel) en interruptor. */
+    static void preparar(ToggleButton interruptor, String descripcion) {
         var perilla = new Region();
         perilla.getStyleClass().add("interruptor-perilla");
-        var interruptor = new ToggleButton();
         interruptor.setGraphic(perilla);
         interruptor.getStyleClass().add("interruptor");
         interruptor.setAccessibleText(descripcion);
-        return interruptor;
+        interruptor.selectedProperty().addListener((obs, antes, ahora) ->
+                Movimiento.deslizarPerilla(perilla, ahora, RECORRIDO_PERILLA));
     }
 }

@@ -2,15 +2,26 @@ package com.registrogastos.ui;
 
 import com.registrogastos.dominio.Abono;
 import com.registrogastos.dominio.Categoria;
+import com.registrogastos.dominio.Cuenta;
 import com.registrogastos.dominio.Deuda;
 import com.registrogastos.dominio.Gasto;
+import com.registrogastos.dominio.LineaPlan;
 import com.registrogastos.dominio.Meta;
+import com.registrogastos.dominio.Moneda;
 import com.registrogastos.dominio.Recurrencia;
+import com.registrogastos.servicio.Analisis;
+import com.registrogastos.servicio.AnaliticaServicio;
+import com.registrogastos.servicio.Conversor;
+import com.registrogastos.servicio.CuentaServicio;
 import com.registrogastos.servicio.DeudaServicio;
+import com.registrogastos.servicio.EstadoCuenta;
 import com.registrogastos.servicio.EstadoDeuda;
 import com.registrogastos.servicio.EstadoMeta;
 import com.registrogastos.servicio.GastoServicio;
 import com.registrogastos.servicio.MetaServicio;
+import com.registrogastos.servicio.MovimientoCuenta;
+import com.registrogastos.servicio.PlanMes;
+import com.registrogastos.servicio.PresupuestoServicio;
 import com.registrogastos.servicio.ProximoCobro;
 import com.registrogastos.servicio.RecurrenciaServicio;
 import com.registrogastos.servicio.ResumenMes;
@@ -42,11 +53,16 @@ public final class ModeloUi {
     private final RecurrenciaServicio recurrencias;
     private final MetaServicio metas;
     private final DeudaServicio deudas;
+    private final CuentaServicio cuentas;
+    private final AnaliticaServicio analitica;
+    private final PresupuestoServicio presupuestos;
     private final ObjectProperty<YearMonth> mes;
     // Se leen junto con el resumen en recargar(): una sola señal de "cambiaron los datos"
     private List<Recurrencia> listaRecurrencias = List.of();
     private List<EstadoMeta> listaMetas = List.of();
     private List<EstadoDeuda> listaDeudas = List.of();
+    private List<EstadoCuenta> listaCuentas = List.of();
+    private PlanMes plan;
     // Wrapper: dentro se escribe, hacia afuera solo se expone la versión de lectura
     private final ReadOnlyObjectWrapper<ResumenMes> resumen = new ReadOnlyObjectWrapper<>();
     /** Gasto cargado en el panel para editar; null = el panel está en modo "nuevo". */
@@ -67,6 +83,9 @@ public final class ModeloUi {
         this.recurrencias = servicios.recurrencias();
         this.metas = servicios.metas();
         this.deudas = servicios.deudas();
+        this.cuentas = servicios.cuentas();
+        this.analitica = servicios.analitica();
+        this.presupuestos = servicios.presupuestos();
         // Al abrir la app se registran los cobros recurrentes que vencieron desde la última vez
         recurrencias.generarPendientes();
         this.mes = new SimpleObjectProperty<>(servicio.mesActual());
@@ -174,13 +193,14 @@ public final class ModeloUi {
         mes.set(servicio.mesActual());
     }
 
-    public void registrar(String descripcion, BigDecimal monto, LocalDate fecha, Categoria categoria) {
-        ultimoRegistradoId = servicio.registrar(descripcion, monto, fecha, idDe(categoria)).id();
+    public void registrar(String descripcion, BigDecimal monto, LocalDate fecha, Categoria categoria, String cuentaId) {
+        ultimoRegistradoId = servicio.registrar(descripcion, monto, fecha, idDe(categoria), cuentaId).id();
         mostrarMesDe(fecha);
     }
 
-    public void editar(String id, String descripcion, BigDecimal monto, LocalDate fecha, Categoria categoria) {
-        servicio.editar(id, descripcion, monto, fecha, idDe(categoria));
+    public void editar(String id, String descripcion, BigDecimal monto, LocalDate fecha, Categoria categoria,
+                       String cuentaId) {
+        servicio.editar(id, descripcion, monto, fecha, idDe(categoria), cuentaId);
         seleccionado.set(null);
         mostrarMesDe(fecha);
     }
@@ -221,6 +241,8 @@ public final class ModeloUi {
      * resumen, así cualquier vista que escuche el resumen ya las encuentra actualizadas.
      */
     private void recargar() {
+        listaCuentas = cuentas.listar();
+        plan = presupuestos.plan(mes.get());
         listaRecurrencias = recurrencias.listar();
         listaMetas = metas.listar();
         listaDeudas = deudas.listar();
@@ -298,8 +320,9 @@ public final class ModeloUi {
      * Si es una deuda que debo, el abono es un gasto: se registra, se muestra su mes y se
      * resalta en Movimientos como cualquier gasto recién registrado.
      */
-    public void abonarDeuda(String deudaId, BigDecimal monto, LocalDate fecha, Categoria categoria, String descripcion) {
-        ultimoRegistradoId = deudas.abonar(deudaId, monto, fecha, idDe(categoria), descripcion);
+    public void abonarDeuda(String deudaId, BigDecimal monto, LocalDate fecha, Categoria categoria, String descripcion,
+                            String cuentaId) {
+        ultimoRegistradoId = deudas.abonar(deudaId, monto, fecha, idDe(categoria), descripcion, cuentaId);
         mostrarMesDe(fecha);
     }
 
@@ -328,7 +351,7 @@ public final class ModeloUi {
     }
 
     public BigDecimal costoMensualRecurrente() {
-        return recurrencias.costoMensual();
+        return recurrencias.costoMensual(resumen().conversor());
     }
 
     public List<Gasto> cobrosDe(String recurrenciaId) {
@@ -340,14 +363,15 @@ public final class ModeloUi {
     }
 
     public void crearRecurrencia(String descripcion, BigDecimal monto, LocalDate primerCobro,
-                                 Categoria categoria, int cada, Recurrencia.Unidad unidad) {
-        recurrencias.crear(descripcion, monto, idDe(categoria), cada, unidad, primerCobro);
+                                 Categoria categoria, String cuentaId, int cada, Recurrencia.Unidad unidad) {
+        recurrencias.crear(descripcion, monto, idDe(categoria), cuentaId, cada, unidad, primerCobro);
         mostrarMesDe(primerCobro.isAfter(hoy()) ? hoy() : primerCobro);
     }
 
+    /** @param inicio nuevo primer cobro (si cambia, se rehace el historial de cobros) */
     public void editarRecurrencia(String id, String descripcion, BigDecimal monto, Categoria categoria,
-                                  int cada, Recurrencia.Unidad unidad) {
-        recurrencias.editar(id, descripcion, monto, idDe(categoria), cada, unidad);
+                                  int cada, Recurrencia.Unidad unidad, LocalDate inicio) {
+        recurrencias.editar(id, descripcion, monto, idDe(categoria), cada, unidad, inicio);
         recargar();
     }
 
@@ -364,6 +388,148 @@ public final class ModeloUi {
     public void eliminarRecurrencia(String id) {
         recurrencias.eliminar(id);
         recargar();
+    }
+
+    // ---- Monedas ----
+
+    public Conversor conversor() {
+        return resumen().conversor();
+    }
+
+    public Moneda monedaDe(String cuentaId) {
+        return conversor().monedaDe(cuentaId);
+    }
+
+    /** El monto de un gasto en su moneda: "12.00" si es la principal, "US$ 12.00" si no. */
+    public String monto(Gasto gasto) {
+        return Formato.monto(gasto.monto(), monedaDe(gasto.cuentaId()));
+    }
+
+    public String monto(Recurrencia recurrencia) {
+        return Formato.monto(recurrencia.monto(), monedaDe(recurrencia.cuentaId()));
+    }
+
+    /** Suma en moneda principal. */
+    public BigDecimal total(List<Gasto> gastos) {
+        return gastos.stream().map(conversor()::aPrincipal).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public BigDecimal tipoCambio(Moneda moneda) {
+        return cuentas.tipoCambio(moneda);
+    }
+
+    public void fijarTipoCambio(Moneda moneda, BigDecimal valor) {
+        cuentas.fijarTipoCambio(moneda, valor);
+        recargar(); // los totales convertidos cambian
+    }
+
+    // ---- Cuentas ----
+
+    public List<EstadoCuenta> cuentas() {
+        return listaCuentas;
+    }
+
+    public Optional<EstadoCuenta> cuenta(String id) {
+        return listaCuentas.stream().filter(c -> c.cuenta().id().equals(id)).findFirst();
+    }
+
+    /** Suma de todos los saldos en moneda principal. */
+    public BigDecimal patrimonio() {
+        return listaCuentas.stream().map(EstadoCuenta::saldoPrincipal).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public List<MovimientoCuenta> movimientosDe(String cuentaId) {
+        return cuentas.movimientos(cuentaId);
+    }
+
+    public Cuenta crearCuenta(String nombre, Cuenta.Tipo tipo, Moneda moneda, BigDecimal saldoInicial) {
+        Cuenta cuenta = cuentas.crear(nombre, tipo, moneda, saldoInicial);
+        recargar();
+        return cuenta;
+    }
+
+    public void editarCuenta(String id, String nombre, Cuenta.Tipo tipo, BigDecimal saldoInicial) {
+        cuentas.editar(id, nombre, tipo, saldoInicial);
+        recargar();
+    }
+
+    public void eliminarCuenta(String id) {
+        cuentas.eliminar(id);
+        recargar();
+    }
+
+    public void registrarIngreso(String cuentaId, String descripcion, BigDecimal monto, LocalDate fecha) {
+        cuentas.registrarIngreso(cuentaId, descripcion, monto, fecha);
+        recargar();
+    }
+
+    public void transferir(String origenId, String destinoId, BigDecimal salida, BigDecimal entrada, LocalDate fecha) {
+        cuentas.transferir(origenId, destinoId, salida, entrada, fecha);
+        recargar();
+    }
+
+    /** Quita un ingreso o una transferencia desde el historial de la cuenta. */
+    public void quitarMovimientoCuenta(MovimientoCuenta movimiento) {
+        switch (movimiento.tipo()) {
+            case INGRESO -> cuentas.eliminarIngreso(movimiento.id());
+            case ENTRADA, SALIDA -> cuentas.eliminarTransferencia(movimiento.id());
+            case GASTO -> throw new IllegalArgumentException("Los gastos se eliminan desde Movimientos");
+        }
+        recargar();
+    }
+
+    // ---- Presupuesto ----
+
+    /** El plan del mes que se está viendo, leído junto con el resumen. */
+    public PlanMes plan() {
+        return plan;
+    }
+
+    public Optional<BigDecimal> ingresoMensual() {
+        return presupuestos.ingresoMensual();
+    }
+
+    /** @param monto null o cero = usar lo registrado en Cuentas */
+    public void fijarIngresoMensual(BigDecimal monto) {
+        presupuestos.fijarIngresoMensual(monto);
+        recargar();
+    }
+
+    public void agregarLineaPlan(String nombre, BigDecimal monto, LineaPlan.Grupo grupo) {
+        presupuestos.agregar(nombre, monto, grupo);
+        recargar();
+    }
+
+    public void editarLineaPlan(String id, String nombre, BigDecimal monto) {
+        presupuestos.editar(id, nombre, monto);
+        recargar();
+    }
+
+    public void eliminarLineaPlan(String id) {
+        presupuestos.eliminar(id);
+        recargar();
+    }
+
+    public void traerRecurrentesAlPlan() {
+        presupuestos.traerRecurrentes();
+        recargar();
+    }
+
+    public void fijarPagoQuincenal(boolean quincenal) {
+        presupuestos.fijarQuincenal(quincenal);
+        recargar();
+    }
+
+    public void cambiarQuincenaLineaPlan(String id, LineaPlan.Quincena quincena) {
+        presupuestos.cambiarQuincena(id, quincena);
+        recargar();
+    }
+
+    // ---- Analíticas ----
+
+    /** Lee y calcula; no toca propiedades de JavaFX, así que puede correr en otro hilo. */
+    public Analisis analizar() {
+        return analitica.analizar();
     }
 
     private static String idDe(Categoria categoria) {

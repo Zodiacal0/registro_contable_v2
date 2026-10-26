@@ -25,14 +25,16 @@ public final class RecurrenciaRepositorio {
     public void guardar(Recurrencia r) {
         String sql = """
                 INSERT INTO recurrencias (id, descripcion, monto_centavos, categoria_id, cada, unidad,
-                                          inicio, generada_hasta, activa, actualizado_en, eliminado)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                          inicio, generada_hasta, activa, actualizado_en, eliminado, cuenta_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     descripcion = excluded.descripcion,
                     monto_centavos = excluded.monto_centavos,
                     categoria_id = excluded.categoria_id,
+                    cuenta_id = excluded.cuenta_id,
                     cada = excluded.cada,
                     unidad = excluded.unidad,
+                    inicio = excluded.inicio,
                     generada_hasta = excluded.generada_hasta,
                     activa = excluded.activa,
                     actualizado_en = excluded.actualizado_en,
@@ -50,6 +52,7 @@ public final class RecurrenciaRepositorio {
             ps.setInt(9, r.activa() ? 1 : 0);
             ps.setLong(10, r.actualizadoEn().toEpochMilli());
             ps.setInt(11, r.eliminado() ? 1 : 0);
+            ps.setString(12, r.cuentaId());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new ErrorDePersistencia("No se pudo guardar la recurrencia " + r.id(), e);
@@ -91,6 +94,7 @@ public final class RecurrenciaRepositorio {
                 rs.getString("descripcion"),
                 deCentavos(rs.getLong("monto_centavos")),
                 rs.getString("categoria_id"),
+                rs.getString("cuenta_id"),
                 rs.getInt("cada"),
                 Recurrencia.Unidad.valueOf(rs.getString("unidad")),
                 LocalDate.parse(rs.getString("inicio")),
