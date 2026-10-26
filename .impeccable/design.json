@@ -1,0 +1,195 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-25T00:00:00Z",
+  "title": "Design System: Registro de Gastos",
+  "extensions": {
+    "platform": {
+      "runtime": "JavaFX 25 (JavaFX CSS), Desktop/src/main/resources/ui/estilos.css",
+      "futureConsumer": "React Native (Mobile/)",
+      "javafxColorNames": {
+        "carbon-violeta": "-c-0",
+        "pizarra-profunda": "-c-1",
+        "ciruela-humo": "-c-2",
+        "malva-ceniza": "-c-3",
+        "lila-niebla": "-c-4",
+        "lavanda-hueso": "-c-5",
+        "riel-noche": "-c-riel",
+        "panel-elevado": "-c-panel",
+        "superficie-tabla": "-c-superficie",
+        "texto-terciario": "-c-texto-3",
+        "linea": "-c-linea",
+        "velo-hover": "-c-velo-hover",
+        "sin-categoria": "Paleta.SIN_CATEGORIA (Java)",
+        "categoria-*": "Categoria.PALETA (Java) + migración V4, color guardado en la base"
+      },
+      "javafxFontFamilies": {
+        "Figtree 400": "Figtree Light",
+        "Figtree 500": "Figtree Light Medium",
+        "Figtree 600": "Figtree Light SemiBold",
+        "IBM Plex Mono 500": "IBM Plex Mono Medium",
+        "IBM Plex Mono 600": "IBM Plex Mono SemiBold"
+      },
+      "javafxGotchas": [
+        "La primera capa de -fx-background-color se pinta abajo (al revés que CSS web).",
+        "Sin :first-child, letter-spacing ni tnum: cifras tabulares con IBM Plex Mono.",
+        "El peso se elige por nombre de familia; -fx-font-weight no mapea a las familias registradas.",
+        "Foco como capa de fondo extra o border-insets negativos para no cambiar el tamaño.",
+        "Sin cursor de mano (convención de escritorio)."
+      ]
+    },
+    "colorMeta": {
+      "carbon-violeta": { "role": "neutral", "displayName": "Carbón Violeta", "canonical": "#17151c", "tonalRamp": ["#121016", "#17151c", "#211e28", "#292531", "#45404f", "#716879", "#aaa2b3", "#e2dde7"] },
+      "pizarra-profunda": { "role": "neutral", "displayName": "Pizarra Profunda", "canonical": "#292531", "tonalRamp": ["#121016", "#17151c", "#211e28", "#292531", "#45404f", "#716879", "#aaa2b3", "#e2dde7"] },
+      "ciruela-humo": { "role": "neutral", "displayName": "Ciruela Humo", "canonical": "#45404f", "tonalRamp": ["#121016", "#17151c", "#211e28", "#292531", "#45404f", "#716879", "#aaa2b3", "#e2dde7"] },
+      "malva-ceniza": { "role": "neutral", "displayName": "Malva Ceniza", "canonical": "#716879", "tonalRamp": ["#121016", "#17151c", "#211e28", "#292531", "#45404f", "#716879", "#aaa2b3", "#e2dde7"] },
+      "lila-niebla": { "role": "secondary", "displayName": "Lila Niebla", "canonical": "#aaa2b3", "tonalRamp": ["#121016", "#17151c", "#211e28", "#292531", "#45404f", "#716879", "#aaa2b3", "#e2dde7"] },
+      "lavanda-hueso": { "role": "primary", "displayName": "Lavanda Hueso", "canonical": "#e2dde7", "tonalRamp": ["#17151c", "#292531", "#45404f", "#716879", "#aaa2b3", "#cdc6d4", "#e2dde7", "#f1edf4"] },
+      "riel-noche": { "role": "neutral", "displayName": "Riel Noche", "canonical": "#121016" },
+      "panel-elevado": { "role": "neutral", "displayName": "Panel Elevado", "canonical": "#211e28" },
+      "superficie-tabla": { "role": "neutral", "displayName": "Superficie Tabla", "canonical": "#1f1c26" },
+      "texto-terciario": { "role": "neutral", "displayName": "Texto Terciario", "canonical": "#8e8597" },
+      "linea": { "role": "neutral", "displayName": "Línea", "canonical": "rgba(226, 221, 231, 0.07)" },
+      "velo-hover": { "role": "neutral", "displayName": "Velo hover", "canonical": "rgba(226, 221, 231, 0.045)" },
+      "lavanda-hueso-hover": { "role": "primary", "displayName": "Lavanda Hueso (hover)", "canonical": "#f1edf4" },
+      "lavanda-hueso-pressed": { "role": "primary", "displayName": "Lavanda Hueso (pressed)", "canonical": "#cdc6d4" },
+      "categoria-lavanda": { "role": "tertiary", "displayName": "Categoría Lavanda", "canonical": "#cbbfe0", "tonalRamp": ["#231934", "#3e2d5d", "#5a4186", "#7353ac", "#957cc0", "#b6a6d4", "#d5cbe6", "#f1eef7"] },
+      "categoria-violeta": { "role": "tertiary", "displayName": "Categoría Violeta", "canonical": "#8a7aa8", "tonalRamp": ["#241e2e", "#403653", "#5d4f78", "#77659a", "#988ab2", "#b8afcb", "#d6d1e1", "#f1f0f5"] },
+      "categoria-malva": { "role": "tertiary", "displayName": "Categoría Malva", "canonical": "#d9a9c4", "tonalRamp": ["#341928", "#5d2d48", "#864168", "#ac5385", "#c07ca2", "#d4a5c0", "#e6cbda", "#f7eef3"] },
+      "categoria-ciruela-oscura": { "role": "tertiary", "displayName": "Categoría Ciruela Oscura", "canonical": "#6f6488", "tonalRamp": ["#24202c", "#413a4f", "#5e5473", "#786c93", "#988fad", "#b9b3c7", "#d6d3df", "#f1f0f4"] },
+      "categoria-pervinca": { "role": "tertiary", "displayName": "Categoría Pervinca", "canonical": "#a6b0d9", "tonalRamp": ["#191e34", "#2d365d", "#414e86", "#5364ac", "#7c89c0", "#a5afd4", "#cbd1e6", "#eef0f7"] },
+      "categoria-ciruela": { "role": "tertiary", "displayName": "Categoría Ciruela", "canonical": "#b38aa6", "tonalRamp": ["#2e1e29", "#53364a", "#794e6b", "#9b6489", "#b38aa6", "#cbafc2", "#e1d1dc", "#f5f0f3"] },
+      "sin-categoria": { "role": "tertiary", "displayName": "Sin categoría", "canonical": "#5e5669", "tonalRamp": ["#26222a", "#443e4c", "#625a6d", "#7d738c", "#9d94a8", "#bcb6c3", "#d8d5dd", "#f2f1f4"] }
+    },
+    "typographyMeta": {
+      "cifra-hero": { "displayName": "Cifra hero", "purpose": "Total del mes, entero a 64 px; decimales a 34 px en Lila Niebla." },
+      "cifra-campo": { "displayName": "Cifra campo", "purpose": "Monto en captura dentro de la caja de monto." },
+      "titulo": { "displayName": "Título", "purpose": "Mes + año, nombre de vista o de categoría." },
+      "titulo-panel": { "displayName": "Título de panel", "purpose": "\"Nuevo gasto\" / edición en el panel de captura." },
+      "titulo-seccion": { "displayName": "Título de sección", "purpose": "Por categoría, Movimientos, Por día." },
+      "body": { "displayName": "Body", "purpose": "Texto base de la interfaz." },
+      "body-medium": { "displayName": "Body Medium", "purpose": "Nombres en filas, leyendas y lista de categorías." },
+      "label": { "displayName": "Label", "purpose": "Etiquetas de campo y cabeceras de tabla." },
+      "detalle": { "displayName": "Detalle", "purpose": "Conteos, porcentajes, leyendas de gráfica." },
+      "micro": { "displayName": "Micro", "purpose": "Ejes de la gráfica, nav del riel, atajos de teclado." },
+      "cifra-tabla": { "displayName": "Cifra tabla", "purpose": "Montos alineados en filas de movimientos." },
+      "cifra-chica": { "displayName": "Cifra chica", "purpose": "Subtotales por día y tooltips." },
+      "cifra-resumen": { "displayName": "Cifra resumen", "purpose": "Total de la tarjeta Hoy en el panel." }
+    },
+    "shadows": [
+      { "name": "luz-hero", "value": "radial-gradient(center 24% 12%, radius 40%, rgba(226,221,231,0.13) 0%, rgba(226,221,231,0.04) 50%, rgba(226,221,231,0) 100%) sobre #17151c", "purpose": "Resplandor difuso detrás del hero; uno por ventana." },
+      { "name": "panel-captura", "value": "dropshadow(gaussian, rgba(0,0,0,0.38), 26, 0, -8, 0)", "purpose": "Separa el panel de captura fijo del centro (CSS web aprox.: -8px 0 26px rgba(0,0,0,0.38))." },
+      { "name": "tooltip", "value": "dropshadow(gaussian, rgba(0,0,0,0.45), 14, 0, 0, 4)", "purpose": "Tooltips de la gráfica." },
+      { "name": "popup", "value": "dropshadow(gaussian, rgba(0,0,0,0.55), 26, 0, 0, 10)", "purpose": "Popup del calendario." }
+    ],
+    "motion": [],
+    "breakpoints": [
+      { "name": "riel", "value": "84px" },
+      { "name": "lista-categorias", "value": "320px" },
+      { "name": "panel-captura", "value": "360px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Acción principal",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Única píldora clara de la zona: \"Registrar gasto\" en el panel de captura.",
+      "html": "<button class=\"ds-btn-primary\">Registrar gasto</button>",
+      "css": ".ds-btn-primary { background: #e2dde7; color: #17151c; font-family: Figtree, sans-serif; font-weight: 600; font-size: 15px; padding: 14px 20px; border: none; border-radius: 999px; min-width: 300px; } .ds-btn-primary:hover { background: #f1edf4; } .ds-btn-primary:active { background: #cdc6d4; } .ds-btn-primary:focus-visible { outline: 2px solid #aaa2b3; outline-offset: 3px; }"
+    },
+    {
+      "name": "Destructivo con confirmación",
+      "kind": "button",
+      "refersTo": "button-destructive",
+      "description": "Transparente; el primer clic lo pasa a confirmar (Ciruela Humo), el segundo ejecuta. Nunca rojo.",
+      "html": "<div style=\"display:flex;gap:10px;background:#211e28;padding:16px\"><button class=\"ds-btn-danger\">Eliminar gasto</button><button class=\"ds-btn-danger ds-btn-danger-confirm\">¿Eliminar? Clic de nuevo</button></div>",
+      "css": ".ds-btn-danger { background: transparent; color: #aaa2b3; font-family: Figtree, sans-serif; font-weight: 600; font-size: 15px; padding: 14px 20px; border: none; border-radius: 999px; } .ds-btn-danger:hover { background: rgba(226,221,231,0.07); color: #e2dde7; } .ds-btn-danger-confirm, .ds-btn-danger-confirm:hover { background: #45404f; color: #e2dde7; } .ds-btn-danger:focus-visible { outline: 2px solid #aaa2b3; outline-offset: 3px; }"
+    },
+    {
+      "name": "Botón de ícono",
+      "kind": "button",
+      "refersTo": "button-icon",
+      "description": "Círculo translúcido de 38 px con ícono SVG propio (navegación de mes).",
+      "html": "<div style=\"display:flex;gap:8px;background:#17151c;padding:16px\"><button class=\"ds-btn-icon\" aria-label=\"Mes anterior\"><svg viewBox=\"0 0 24 24\" width=\"14\" height=\"14\"><path fill=\"#e2dde7\" d=\"M15.4 4.6 17 6.2 11.2 12 17 17.8 15.4 19.4 8 12z\"/></svg></button><button class=\"ds-btn-icon\" aria-label=\"Mes siguiente\"><svg viewBox=\"0 0 24 24\" width=\"14\" height=\"14\"><path fill=\"#e2dde7\" d=\"M8.6 4.6 7 6.2 12.8 12 7 17.8 8.6 19.4 16 12z\"/></svg></button></div>",
+      "css": ".ds-btn-icon { width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; background: rgba(226,221,231,0.07); border: none; border-radius: 999px; padding: 0; } .ds-btn-icon:hover { background: rgba(226,221,231,0.13); } .ds-btn-icon:focus-visible { outline: 2px solid #aaa2b3; outline-offset: 3px; }"
+    },
+    {
+      "name": "Campo",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Campo hundido en Carbón Violeta con anillo de 1 px; el foco engrosa el anillo sin cambiar tamaño.",
+      "html": "<div style=\"background:#211e28;padding:16px\"><input class=\"ds-input\" placeholder=\"¿En qué fue?\"></div>",
+      "css": ".ds-input { background: #17151c; color: #e2dde7; font-family: Figtree, sans-serif; font-size: 14px; padding: 12px 14px; border: none; border-radius: 12px; box-shadow: inset 0 0 0 1px rgba(226,221,231,0.07); width: 280px; } .ds-input::placeholder { color: #aaa2b3; } .ds-input:focus, .ds-input:focus-visible { outline: none; box-shadow: inset 0 0 0 1.5px #aaa2b3; }"
+    },
+    {
+      "name": "Chip de categoría",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Píldora translúcida con punto de color de categoría; seleccionado en Ciruela Humo con anillo interior.",
+      "html": "<div style=\"display:flex;gap:8px;background:#211e28;padding:16px\"><button class=\"ds-chip ds-chip-selected\"><span class=\"ds-dot\" style=\"background:#5e5669\"></span>Sin categoría</button><button class=\"ds-chip\"><span class=\"ds-dot\" style=\"background:#cbbfe0\"></span>Comida</button><button class=\"ds-chip\"><span class=\"ds-dot\" style=\"background:#d9a9c4\"></span>Hogar</button></div>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; gap: 8px; background: rgba(226,221,231,0.06); color: #aaa2b3; font-family: Figtree, sans-serif; font-weight: 500; font-size: 13px; padding: 7px 13px 7px 11px; border: none; border-radius: 999px; } .ds-chip:hover { background: rgba(226,221,231,0.11); color: #e2dde7; } .ds-chip-selected, .ds-chip-selected:hover { background: #45404f; color: #e2dde7; box-shadow: inset 0 0 0 1px #aaa2b3; } .ds-chip:focus-visible { outline: 2px solid #aaa2b3; outline-offset: 3px; } .ds-dot { width: 8px; height: 8px; border-radius: 4px; display: inline-block; }"
+    },
+    {
+      "name": "Riel de navegación",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "Riel de 84 px con ítems de ícono sobre etiqueta; seleccionado con velo al 8 %.",
+      "html": "<nav class=\"ds-rail\"><button class=\"ds-nav ds-nav-selected\"><svg viewBox=\"0 0 24 24\" width=\"19\" height=\"19\"><path d=\"M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z\"/></svg>Resumen</button><button class=\"ds-nav\"><svg viewBox=\"0 0 24 24\" width=\"19\" height=\"19\"><path d=\"M5 4h14a2 2 0 0 1 0 4H5a2 2 0 0 1 0-4zM5 10h10a2 2 0 0 1 0 4H5a2 2 0 0 1 0-4zM5 16h6a2 2 0 0 1 0 4H5a2 2 0 0 1 0-4z\"/></svg>Categorías</button></nav>",
+      "css": ".ds-rail { width: 84px; background: #121016; box-shadow: inset -1px 0 0 rgba(226,221,231,0.07); padding: 22px 10px 20px 10px; display: flex; flex-direction: column; align-items: center; gap: 10px; box-sizing: border-box; } .ds-nav { width: 64px; display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 11px 4px 9px 4px; background: transparent; border: none; border-radius: 14px; color: #8e8597; fill: #8e8597; font-family: Figtree, sans-serif; font-weight: 500; font-size: 11px; } .ds-nav:hover { color: #aaa2b3; fill: #aaa2b3; } .ds-nav-selected, .ds-nav-selected:hover { background: rgba(226,221,231,0.08); color: #e2dde7; fill: #e2dde7; } .ds-nav:focus-visible { outline: 1px solid #aaa2b3; }"
+    },
+    {
+      "name": "Tabla de movimientos",
+      "kind": "card",
+      "refersTo": "table",
+      "description": "Contenedor de 18 px con separador de día y subtotal en mono; montos en IBM Plex Mono.",
+      "html": "<div class=\"ds-table\"><div class=\"ds-row-day\"><span>Hoy</span><span class=\"ds-mono ds-sub\">11.30</span></div><div class=\"ds-row\"><span class=\"ds-title\">Uber al trabajo</span><span class=\"ds-mono ds-amt\">6.80</span></div><div class=\"ds-row\"><span class=\"ds-title\">Café de especialidad</span><span class=\"ds-mono ds-amt\">4.50</span></div></div>",
+      "css": ".ds-table { background: #1f1c26; box-shadow: inset 0 0 0 1px rgba(226,221,231,0.07); border-radius: 18px; padding: 6px 8px 8px 8px; width: 420px; font-family: Figtree, sans-serif; color: #e2dde7; } .ds-row-day { display: flex; justify-content: space-between; padding: 18px 14px 8px 14px; color: #aaa2b3; font-weight: 600; font-size: 12px; } .ds-row { display: flex; justify-content: space-between; padding: 10px 14px; border-radius: 12px; border-top: 1px solid rgba(226,221,231,0.07); } .ds-row:hover { background: rgba(226,221,231,0.045); } .ds-title { font-weight: 500; font-size: 14px; } .ds-mono { font-family: 'IBM Plex Mono', monospace; font-weight: 500; } .ds-amt { font-size: 15px; } .ds-sub { font-size: 12px; }"
+    },
+    {
+      "name": "Variación vs mes anterior",
+      "kind": "custom",
+      "refersTo": "variacion",
+      "description": "Píldora con triángulo SVG; alza con velo claro, baja sobre Pizarra Profunda. Nunca rojo/verde.",
+      "html": "<div style=\"display:flex;gap:10px;background:#17151c;padding:16px\"><span class=\"ds-var ds-var-up\"><svg viewBox=\"0 0 24 24\" width=\"9\" height=\"9\"><path d=\"M12 6 19 17H5z\"/></svg>41.5%</span><span class=\"ds-var ds-var-down\"><svg viewBox=\"0 0 24 24\" width=\"9\" height=\"9\"><path d=\"M5 7h14l-7 11z\"/></svg>12.0%</span></div>",
+      "css": ".ds-var { display: inline-flex; align-items: center; gap: 6px; font-family: Figtree, sans-serif; font-weight: 600; font-size: 12px; padding: 4px 10px 4px 8px; border-radius: 999px; } .ds-var-up { color: #e2dde7; fill: #e2dde7; background: rgba(226,221,231,0.12); } .ds-var-down { color: #aaa2b3; fill: #aaa2b3; background: #292531; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "El escritorio violáceo de tres zonas",
+    "overview": "Un escritorio financiero en tres zonas fijas: riel de navegación, el mes en el centro y un panel de captura siempre abierto a la derecha. Registrar y entender conviven sin modales: el usuario ve cuánto lleva gastado, si va peor o mejor que el mes pasado y en qué día se le fue, y anota el siguiente gasto sin cambiar de pantalla. La composición toma de Apple la sobriedad y la píldora clara, de Binance la lectura de cifras tipo wallet y la tabla de movimientos, y de Steam los paneles en capas y la topología lista + detalle.\n\nTodo vive dentro de una sola familia de seis grises violáceos fijada por el usuario, apilados en capas de oscuro a claro. No hay color semántico: la información se codifica por luminosidad, forma (triángulos de alza/baja) y posición, nunca por rojo/verde. La profundidad viene de capas tonales, una luz difusa detrás del hero y una única sombra estructural en el panel de captura. Densidad media: ni vacía ni recargada; se siente app de escritorio, no página web.",
+    "keyCharacteristics": [
+      "Paleta cerrada de seis tonos gris violáceo más derivados mezclados de la misma familia.",
+      "Una sola superficie clara rellena por zona: la acción principal.",
+      "Cifras tabulares en IBM Plex Mono; interfaz en Figtree.",
+      "Bordes de 1 px como capa de fondo translúcida (`-c-linea`), no como `border`.",
+      "Íconos propios como trazos SVG monocromos que heredan el color del texto.",
+      "Layout fijo de tres zonas: 84 px · flexible · 360 px."
+    ],
+    "rules": [
+      { "name": "Regla de la familia cerrada", "body": "Ningún color fuera de la escalera gris violácea `#17151C → #E2DDE7` y sus mezclas. No hay rojo, verde, ámbar ni azul de sistema; tampoco para errores (el texto de error usa Lavanda Hueso en Medium).", "section": "colors" },
+      { "name": "Regla de la única luz", "body": "Lavanda Hueso como relleno se reserva a la acción principal de la zona, al día seleccionado del calendario y al marcador de hoy en la gráfica. Si una pantalla nueva tiene dos rellenos claros compitiendo, uno sobra.", "section": "colors" },
+      { "name": "Regla de forma antes que color", "body": "Alza y baja se distinguen por triángulo (▲/▼ como SVG) y por luminosidad del fondo (velo claro al subir, `-c-1` al bajar), nunca por tono.", "section": "colors" },
+      { "name": "Regla de la cifra en mono", "body": "Todo monto que se compara en columna va en IBM Plex Mono: JavaFX no tiene `tnum` ni `letter-spacing`, así que la alineación tabular se obtiene con la fuente. Las cifras hero (64 px, 42 px) van en Figtree porque se leen solas.", "section": "typography" },
+      { "name": "Regla del peso por nombre", "body": "Nunca pedir un peso con `-fx-font-weight`; elegir la familia registrada de ese peso.", "section": "typography" },
+      { "name": "Regla de plano por defecto", "body": "Tarjetas, tablas, chips y botones no llevan sombra; se separan por tono y por la línea de 1 px. La sombra es para el panel fijo y lo que flota.", "section": "elevation" }
+    ],
+    "dos": [
+      "**Do** derivar cualquier color nuevo mezclando la escalera `#17151C → #E2DDE7`; para velos usar `rgba(226,221,231,α)` con α entre 0.045 y 0.13.",
+      "**Do** dejar un solo relleno Lavanda Hueso por zona: la acción principal.",
+      "**Do** poner toda cifra comparable en IBM Plex Mono y el peso por nombre de familia.",
+      "**Do** dibujar foco y bordes como capas de fondo o con `border-insets` negativos para que el tamaño no cambie.",
+      "**Do** pedir confirmación en dos clics para borrar, cambiando el botón a Ciruela Humo.",
+      "**Do** dibujar íconos como trazos SVG en `-fx-shape` (enum `Iconos`, retícula 24) con el color heredado del estado.",
+      "**Do** recordar que en JavaFX la primera capa de fondo queda abajo: sólido primero, luz encima."
+    ],
+    "donts": [
+      "**Don't** usar rojo, verde u otro color semántico para alza, baja, error o borrar.",
+      "**Don't** abrir modales para registrar o editar: todo pasa en el panel de captura fijo.",
+      "**Don't** usar `:first-child`, `letter-spacing` ni `font-feature-settings`: JavaFX CSS no los soporta.",
+      "**Don't** cambiar el cursor a mano en botones; es app de escritorio.",
+      "**Don't** usar `#E2DDE7` como color de categoría: es el del texto y de la acción principal.",
+      "**Don't** poner sombra en tarjetas, chips o filas; la sombra es del panel fijo y de lo que flota.",
+      "**Don't** componer la vista como un dashboard de tarjetas iguales."
+    ]
+  }
+}

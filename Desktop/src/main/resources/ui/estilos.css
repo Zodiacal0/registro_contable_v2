@@ -1,0 +1,1164 @@
+/*
+ * CONTRATO DE DIRECCIÓN
+ * THESIS: un escritorio financiero en tres zonas (riel · mes · captura fija) donde registrar
+ *   y entender el mes conviven sin modales; rechaza el dashboard de tarjetas iguales.
+ * OWN-WORLD: la paleta gris violácea del usuario en capas (#17151C → #E2DDE7) y NADA fuera
+ *   de esa familia: categorías en tintes lavanda/malva/ciruela, alza/baja por triángulo y no
+ *   por color; luz difusa detrás del hero como en su imagen de paleta; acción principal como
+ *   única píldora clara; cifras de tabla en mono; íconos SVG propios.
+ * STORY: abre y ve cuánto lleva gastado, si va peor o mejor que el mes pasado y en qué día
+ *   se le fue (marcado en la gráfica); anota el siguiente gasto sin cambiar de pantalla.
+ * FIRST VIEWPORT: riel de 84 px; centro con mes en título, saldo partido (entero 64 px +
+ *   decimales) junto a las barras por día; panel derecho de 360 px elevado con sombra,
+ *   monto arriba y "Registrar gasto" abajo.
+ * FORM: dirección fijada por el usuario, que reemplaza el sorteo: "usa esta paleta ... básate
+ *   en cómo se compone Apple, Binance, Steam" (paleta #17151C…#E2DDE7 + referencias Mobbin:
+ *   Binance assets overview, Apple Wallet spending, Copilot/YNAB; Steam desde su cliente).
+ * FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review,
+ *   the verdict, and DESIGN.md
+ *
+ * Notas técnicas:
+ * - "-c-*" son looked-up colors (variables de color de JavaFX CSS), definidas en .root.
+ * - Fuentes: cada peso se registra como familia aparte ("Figtree Light SemiBold",
+ *   "IBM Plex Mono Medium") y JavaFX no traduce -fx-font-weight a esas familias, así que el
+ *   peso se elige por nombre. Figtree regular se registra como "Figtree Light" (nombre heredado
+ *   de su fuente variable; el trazo es el de 400).
+ */
+
+.root {
+    /* Paleta del usuario, de oscuro a claro */
+    -c-0: #17151c;
+    -c-1: #292531;
+    -c-2: #45404f;
+    -c-3: #716879;
+    -c-4: #aaa2b3;
+    -c-5: #e2dde7;
+
+    /* Derivados (mezclas de la misma paleta) */
+    -c-riel: #121016;
+    -c-panel: #211e28;
+    -c-superficie: #1f1c26;
+    -c-texto-3: #8e8597;               /* entre -c-3 y -c-4: texto terciario legible (≥4.5:1) */
+    -c-linea: rgba(226, 221, 231, 0.07);
+    -c-velo-hover: rgba(226, 221, 231, 0.045);
+
+
+    -fx-font-family: "Figtree Light";
+    -fx-font-size: 14px;
+    -fx-background-color: -c-0;
+
+    /* Variables de Modena para que los controles nativos combinen */
+    -fx-base: #2c2834;
+    -fx-background: -c-0;
+    -fx-control-inner-background: -c-0;
+    -fx-accent: -c-4;
+    -fx-focus-color: -c-4;
+    -fx-faint-focus-color: transparent;
+    -fx-selection-bar: -c-2;
+    -fx-selection-bar-text: -c-5;
+}
+
+.label {
+    -fx-text-fill: -c-5;
+}
+
+/* ---------- Marco: luz difusa detrás del hero, como en la imagen de la paleta ---------- */
+
+/* En JavaFX la PRIMERA capa de fondo queda abajo (al revés que en CSS web):
+   primero el sólido y encima la luz */
+.marco {
+    -fx-background-color:
+        -c-0,
+        radial-gradient(center 24% 12%, radius 40%, rgba(226, 221, 231, 0.13) 0%, rgba(226, 221, 231, 0.04) 50%, rgba(226, 221, 231, 0) 100%);
+}
+
+/* ---------- Barra de título propia (HeaderBar) ---------- */
+
+/* Mismo tono que el riel: juntos forman la "L" oscura del cliente de Steam */
+.barra-titulo {
+    -fx-background-color: -c-linea, -c-riel;
+    -fx-background-insets: 0, 0 0 1 0;
+}
+
+/* La marca queda centrada sobre el riel de 84 px: (84 - 26) / 2 = 29 */
+.barra-izquierda {
+    -fx-padding: 0 0 0 29;
+}
+
+.barra-nombre {
+    -fx-text-fill: -c-4;
+    -fx-font-family: "Figtree Light SemiBold";
+    -fx-font-size: 13px;
+}
+
+.barra-derecha {
+    -fx-padding: 0 18;
+}
+
+/*
+ * Botones de Windows (minimizar, maximizar, cerrar) que dibuja el HeaderBar. Sus clases son
+ * internas de JavaFX 25 (feature preview: pueden cambiar al actualizar). Por defecto el ícono
+ * es gris #777, casi invisible sobre la barra; aquí toma los tonos de la paleta. !important
+ * porque la hoja de JavaFX va pegada al propio botón y le ganaría a la de la escena.
+ */
+.-FX-INTERNAL-iconify-button > .-FX-INTERNAL-glyph,
+.-FX-INTERNAL-maximize-button > .-FX-INTERNAL-glyph,
+.-FX-INTERNAL-close-button > .-FX-INTERNAL-glyph {
+    -fx-background-color: #aaa2b3 !important;
+}
+
+.-FX-INTERNAL-iconify-button:active > .-FX-INTERNAL-glyph,
+.-FX-INTERNAL-maximize-button:active > .-FX-INTERNAL-glyph,
+.-FX-INTERNAL-close-button:active > .-FX-INTERNAL-glyph {
+    -fx-background-color: #e2dde7 !important;
+}
+
+.-FX-INTERNAL-iconify-button:hover,
+.-FX-INTERNAL-maximize-button:hover {
+    -fx-background-color: rgba(226, 221, 231, 0.09) !important;
+}
+
+/* Cerrar: en vez del rojo de Windows, el tono más claro de la paleta con el ícono oscuro */
+.-FX-INTERNAL-close-button:hover {
+    -fx-background-color: #e2dde7 !important;
+}
+
+.-FX-INTERNAL-close-button:hover > .-FX-INTERNAL-glyph {
+    -fx-background-color: #17151c !important;
+}
+
+/* ---------- Riel ---------- */
+
+.riel {
+    -fx-background-color: -c-linea, -c-riel;
+    -fx-background-insets: 0, 0 1 0 0;
+    -fx-padding: 18 7 20 7;
+    -fx-min-width: 84;
+    -fx-pref-width: 84;
+}
+
+.marca-capsula {
+    -fx-min-width: 26;
+    -fx-max-width: 26;
+    -fx-min-height: 10;
+    -fx-max-height: 10;
+    -fx-background-radius: 5;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 5, 0, 0, -2);
+}
+
+.marca-capsula-1 { -fx-background-color: -c-3; }
+.marca-capsula-2 { -fx-background-color: -c-4; }
+.marca-capsula-3 { -fx-background-color: -c-5; }
+
+.nav-item {
+    -fx-background-color: transparent;
+    -fx-background-radius: 14;
+    -fx-text-fill: -c-texto-3;
+    -fx-font-family: "Figtree Light Medium";
+    -fx-font-size: 11px;
+    -fx-graphic-text-gap: 7;
+    -fx-padding: 11 2 9 2;
+    -fx-min-width: 70;
+    -fx-pref-width: 70;
+}
+
+.nav-item .icono-nav {
+    -fx-background-color: -c-texto-3;
+}
+
+.nav-item:hover {
+    -fx-text-fill: -c-4;
+}
+
+.nav-item:hover .icono-nav {
+    -fx-background-color: -c-4;
+}
+
+.nav-item:selected {
+    -fx-background-color: rgba(226, 221, 231, 0.08);
+    -fx-text-fill: -c-5;
+}
+
+.nav-item:selected .icono-nav {
+    -fx-background-color: -c-5;
+}
+
+.nav-item:focus-visible {
+    -fx-border-color: -c-4;
+    -fx-border-radius: 14px;
+}
+
+.estado-punto {
+    -fx-min-width: 8;
+    -fx-min-height: 8;
+    -fx-max-width: 8;
+    -fx-max-height: 8;
+    -fx-background-radius: 4;
+    -fx-background-color: -c-4;
+}
+
+.estado-texto {
+    -fx-text-fill: -c-texto-3;
+    -fx-font-size: 10px;
+}
+
+/* ---------- "+ Nuevo" en el riel (panel cerrado) ---------- */
+
+.riel-separador {
+    -fx-min-height: 1;
+    -fx-max-height: 1;
+    -fx-min-width: 40;
+    -fx-max-width: 40;
+    -fx-background-color: rgba(226, 221, 231, 0.1);
+}
+
+.capturar {
+    -fx-background-color: transparent;
+    -fx-text-fill: -c-4;
+    -fx-font-family: "Figtree Light Medium";
+    -fx-font-size: 11px;
+    -fx-graphic-text-gap: 8;
+    -fx-padding: 4;
+}
+
+/* La única luz con el panel cerrado: círculo claro con el + oscuro */
+.capturar-circulo {
+    -fx-background-color: -c-5;
+    -fx-background-radius: 999px;
+    -fx-min-width: 44;
+    -fx-min-height: 44;
+    -fx-max-width: 44;
+    -fx-max-height: 44;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.45), 14, 0, 0, 4);
+}
+
+.capturar:hover {
+    -fx-text-fill: -c-5;
+}
+
+.capturar:hover .capturar-circulo {
+    -fx-background-color: #f1edf4;
+}
+
+.capturar:pressed .capturar-circulo {
+    -fx-background-color: #cdc6d4;
+}
+
+.capturar:focus-visible .capturar-circulo {
+    -fx-border-color: -c-4;
+    -fx-border-width: 2;
+    -fx-border-radius: 999px;
+    -fx-border-insets: -4;
+}
+
+.capturar-circulo .icono {
+    -fx-background-color: -c-0;
+    -fx-min-width: 16;
+    -fx-min-height: 16;
+    -fx-max-width: 16;
+    -fx-max-height: 16;
+}
+
+/* ---------- Íconos (SVG en -fx-shape) ---------- */
+
+.icono {
+    -fx-background-color: -c-5;
+    -fx-min-width: 14;
+    -fx-min-height: 14;
+    -fx-max-width: 14;
+    -fx-max-height: 14;
+}
+
+.icono-chico {
+    -fx-min-width: 9;
+    -fx-min-height: 9;
+    -fx-max-width: 9;
+    -fx-max-height: 9;
+}
+
+.icono-nav {
+    -fx-min-width: 19;
+    -fx-min-height: 19;
+    -fx-max-width: 19;
+    -fx-max-height: 19;
+}
+
+/* ---------- Vistas ---------- */
+
+.vista,
+.vista > .viewport {
+    -fx-background-color: transparent;
+}
+
+.contenido {
+    -fx-padding: 40 44 56 44;
+    -fx-spacing: 40;
+}
+
+.scroll-bar {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar:vertical {
+    -fx-pref-width: 10;
+    -fx-padding: 2;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: rgba(226, 221, 231, 0.12);
+    -fx-background-radius: 4;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: rgba(226, 221, 231, 0.2);
+}
+
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.scroll-bar .increment-arrow,
+.scroll-bar .decrement-arrow {
+    -fx-shape: " ";
+    -fx-padding: 0;
+}
+
+.scroll-pane > .corner {
+    -fx-background-color: transparent;
+}
+
+/* ---------- Tipografía ---------- */
+
+.titulo {
+    -fx-font-family: "Figtree Light SemiBold";
+    -fx-font-size: 34px;
+}
+
+.titulo-tenue {
+    -fx-text-fill: -c-3;
+}
+
+.subtitulo {
+    -fx-text-fill: -c-4;
+}
+
+.etiqueta {
+    -fx-text-fill: -c-4;
+    -fx-font-size: 13px;
+}
+
+.seccion-titulo {
+    -fx-font-family: "Figtree Light SemiBold";
+    -fx-font-size: 17px;
+}
+
+.seccion-detalle {
+    -fx-text-fill: -c-texto-3;
+    -fx-font-size: 12px;
+}
+
+/* ---------- Botones ---------- */
+
+.boton {
+    -fx-background-radius: 999;
+    -fx-background-insets: 0;
+    -fx-padding: 10 18;
+    -fx-font-family: "Figtree Light SemiBold";
+    -fx-font-size: 14px;
+}
+
+/* Acción principal: píldora clara sobre fondo oscuro, como los botones de Apple en modo oscuro */
+.boton-primario {
+    -fx-background-color: -c-5;
+    -fx-text-fill: -c-0;
+}
+
+.boton-primario:hover {
+    -fx-background-color: #f1edf4;
+}
+
+.boton-primario:pressed {
+    -fx-background-color: #cdc6d4;
+}
+
+.boton-ancho {
+    -fx-padding: 14 20;
+    -fx-font-size: 15px;
+}
+
+.boton-peligro {
+    -fx-background-color: transparent;
+    -fx-text-fill: -c-4;
+}
+
+.boton-peligro:hover {
+    -fx-background-color: rgba(226, 221, 231, 0.07);
+    -fx-text-fill: -c-5;
+}
+
+.boton-peligro-confirmar,
+.boton-peligro-confirmar:hover {
+    -fx-background-color: -c-2;
+    -fx-text-fill: -c-5;
+}
+
+.boton-icono {
+    -fx-background-color: rgba(226, 221, 231, 0.07);
+    -fx-padding: 0;
+    -fx-min-width: 38;
+    -fx-min-height: 38;
+    -fx-max-width: 38;
+    -fx-max-height: 38;
+}
+
+.boton-icono:hover {
+    -fx-background-color: rgba(226, 221, 231, 0.13);
+}
+
+.boton-icono-chico {
+    -fx-min-width: 30;
+    -fx-min-height: 30;
+    -fx-max-width: 30;
+    -fx-max-height: 30;
+}
+
+.boton-icono-chico .icono {
+    -fx-min-width: 11;
+    -fx-min-height: 11;
+    -fx-max-width: 11;
+    -fx-max-height: 11;
+    -fx-background-color: -c-4;
+}
+
+.boton-icono-primario {
+    -fx-background-color: -c-5;
+}
+
+.boton-icono-primario:hover {
+    -fx-background-color: #f1edf4;
+}
+
+.boton-icono-primario .icono {
+    -fx-background-color: -c-0;
+}
+
+.boton-texto {
+    -fx-background-color: transparent;
+    -fx-background-radius: 8;
+    -fx-text-fill: -c-4;
+    -fx-font-size: 12px;
+    -fx-padding: 6 8;
+}
+
+.boton-texto:hover {
+    -fx-background-color: rgba(226, 221, 231, 0.07);
+    -fx-text-fill: -c-5;
+}
+
+.boton-texto-confirmar,
+.boton-texto-confirmar:hover {
+    -fx-background-color: -c-2;
+    -fx-text-fill: -c-5;
+}
+
+/* Píldora de texto en la superficie de los botones de ícono ("Hoy") */
+.boton-pildora {
+    -fx-background-color: rgba(226, 221, 231, 0.07);
+    -fx-text-fill: -c-5;
+    -fx-font-size: 13px;
+    -fx-padding: 0 16;
+    -fx-min-height: 38;
+    -fx-max-height: 38;
+}
+
+.boton-pildora:hover {
+    -fx-background-color: rgba(226, 221, 231, 0.13);
+}
+
+/* Anillo de foco solo con teclado */
+.boton:focus-visible {
+    -fx-border-color: -c-4;
+    -fx-border-width: 2;
+    -fx-border-radius: 999px;
+    -fx-border-insets: -3;
+}
+
+/* ---------- Encabezado y hero ---------- */
+
+.encabezado {
+    -fx-padding: 0 0 4 0;
+}
+
+.saldo-entero {
+    -fx-font-family: "Figtree Light SemiBold";
+    -fx-font-size: 64px;
+}
+
+.saldo-decimales {
+    -fx-font-family: "Figtree Light SemiBold";
+    -fx-font-size: 34px;
+    -fx-text-fill: -c-4;
+}
+
+.variacion {
+    -fx-font-family: "Figtree Light SemiBold";
+    -fx-font-size: 12px;
+    -fx-padding: 4 10 4 8;
+    -fx-background-radius: 999;
+    -fx-graphic-text-gap: 6;
+}
+
+.variacion-sube {
+    -fx-text-fill: -c-5;
+    -fx-background-color: rgba(226, 221, 231, 0.12);
+}
+
+.variacion-sube .icono {
+    -fx-background-color: -c-5;
+}
+
+.variacion-baja {
+    -fx-text-fill: -c-4;
+    -fx-background-color: -c-1;
+}
+
+.variacion-baja .icono {
+    -fx-background-color: -c-4;
+}
+
+/* ---------- Gráfica por día ---------- */
+
+/* Columna de cada día: se ilumina bajo el mouse y queda marcada si filtra la tabla */
+.grafica-celda {
+    -fx-background-radius: 6;
+}
+
+.grafica-celda:hover {
+    -fx-background-color: rgba(226, 221, 231, 0.06);
+}
+
+.grafica-celda-elegida,
+.grafica-celda-elegida:hover {
+    -fx-background-color: rgba(226, 221, 231, 0.12);
+}
+
+.grafica-lectura {
+    -fx-text-fill: -c-4;
+    -fx-font-family: "Figtree Light Medium";
+    -fx-font-size: 12px;
+    -fx-min-height: 18;
+}
+
+.barra-dia {
+    -fx-background-color: -c-3;
+    -fx-background-radius: 3 3 1 1;
+}
+
+.barra-dia-hoy {
+    -fx-background-color: -c-5;
+    -fx-background-radius: 3 3 1 1;
+}
+
+.barra-dia-pico {
+    -fx-background-color: -c-4;
+    -fx-background-radius: 3 3 1 1;
+}
+
+.grafica-muestra-pico {
+    -fx-min-width: 8;
+    -fx-min-height: 8;
+    -fx-max-width: 8;
+    -fx-max-height: 8;
+    -fx-background-radius: 2;
+    -fx-background-color: -c-4;
+}
+
+.grafica-muestra-promedio {
+    -fx-min-width: 14;
+    -fx-max-width: 14;
+    -fx-min-height: 1;
+    -fx-max-height: 1;
+    -fx-border-color: -c-4 transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+    -fx-border-style: segments(3, 3);
+}
+
+.barra-dia-vacio {
+    -fx-background-color: -c-2;
+    -fx-background-radius: 2;
+}
+
+.barra-dia-futuro {
+    -fx-background-color: -c-1;
+    -fx-background-radius: 2;
+}
+
+.grafica-promedio {
+    -fx-border-color: rgba(170, 162, 179, 0.55) transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+    -fx-border-style: segments(4, 4);
+}
+
+.grafica-eje {
+    -fx-text-fill: -c-texto-3;
+    -fx-font-size: 11px;
+}
+
+.grafica-leyenda {
+    -fx-text-fill: -c-texto-3;
+    -fx-font-size: 12px;
+}
+
+.tooltip {
+    -fx-background-color: -c-1;
+    -fx-background-radius: 8;
+    -fx-text-fill: -c-5;
+    -fx-font-family: "IBM Plex Mono Medium";
+    -fx-font-size: 12px;
+    -fx-padding: 6 10;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.45), 14, 0, 0, 4);
+}
+
+/* ---------- Por categoría ---------- */
+
+.barra-segmentada {
+    -fx-min-height: 12;
+    -fx-pref-height: 12;
+    -fx-max-height: 12;
+}
+
+.barra-segmentada-vacia {
+    -fx-background-color: -c-1;
+    -fx-background-radius: 6;
+}
+
+.tramo {
+    -fx-background-radius: 4;
+}
+
+.muestra {
+    -fx-min-width: 10;
+    -fx-min-height: 10;
+    -fx-max-width: 10;
+    -fx-max-height: 10;
+    -fx-background-radius: 3;
+    -fx-translate-y: 4;
+}
+
+.leyenda-item {
+    -fx-padding: 8 10;
+    -fx-background-radius: 12;
+}
+
+.leyenda-item:hover {
+    -fx-background-color: -c-velo-hover;
+}
+
+.leyenda-item-elegida,
+.leyenda-item-elegida:hover {
+    -fx-background-color: rgba(226, 221, 231, 0.09);
+}
+
+.leyenda-item-apagada {
+    -fx-opacity: 0.4;
+}
+
+.leyenda-nombre {
+    -fx-font-family: "Figtree Light Medium";
+}
+
+.leyenda-detalle {
+    -fx-text-fill: -c-texto-3;
+    -fx-font-size: 12px;
+}
+
+.leyenda-monto {
+    -fx-font-family: "IBM Plex Mono Medium";
+}
+
+.punto {
+    -fx-min-width: 8;
+    -fx-min-height: 8;
+    -fx-max-width: 8;
+    -fx-max-height: 8;
+    -fx-background-radius: 4;
+}
+
+/* ---------- Tabla de movimientos (Binance) ---------- */
+
+/* Búsqueda en píldora. Doble clase: .campo se define más abajo y, a igual especificidad, ganaría por orden */
+.campo.campo-busqueda {
+    -fx-background-radius: 999, 999;
+    -fx-padding: 8 16;
+    -fx-font-size: 13px;
+}
+
+.campo.campo-busqueda:focused {
+    -fx-background-radius: 999, 999;
+}
+
+.filtro-pildora {
+    -fx-background-color: -c-2;
+    -fx-text-fill: -c-5;
+    -fx-font-size: 12px;
+    -fx-padding: 6 10 6 14;
+    -fx-graphic-text-gap: 8;
+}
+
+.filtro-pildora:hover {
+    -fx-background-color: #514b5c;
+}
+
+.filtro-pildora .icono {
+    -fx-background-color: -c-4;
+}
+
+/* Destello detrás del gasto recién registrado; Movimiento.resaltar() lo apaga */
+.fila-destello {
+    -fx-background-color: rgba(226, 221, 231, 0.16);
+    -fx-background-radius: 12;
+}
+
+.tabla {
+    -fx-background-color: -c-linea, -c-superficie;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 18, 17;
+    -fx-padding: 6 8 8 8;
+}
+
+.tabla-fila-cabecera {
+    -fx-padding: 12 14 10 14;
+}
+
+.tabla-cabecera {
+    -fx-text-fill: -c-texto-3;
+    -fx-font-family: "Figtree Light Medium";
+    -fx-font-size: 12px;
+}
+
+/* Separador de día (listas agrupadas de Apple), con subtotal a la derecha */
+.tabla-fila-dia {
+    -fx-padding: 18 14 8 14;
+}
+
+.tabla-dia {
+    -fx-text-fill: -c-4;
+    -fx-font-family: "Figtree Light SemiBold";
+    -fx-font-size: 12px;
+}
+
+.tabla-dia-total {
+    -fx-text-fill: -c-4;
+    -fx-font-family: "IBM Plex Mono Medium";
+    -fx-font-size: 12px;
+}
+
+.tabla-fila {
+    -fx-padding: 10 14;
+    -fx-background-radius: 12;
+    -fx-border-color: -c-linea transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+
+.tabla-fila:hover {
+    -fx-background-color: -c-velo-hover;
+}
+
+.tabla-fila-seleccionada,
+.tabla-fila-seleccionada:hover {
+    -fx-background-color: rgba(226, 221, 231, 0.1);
+}
+
+.celda-titulo {
+    -fx-font-family: "Figtree Light Medium";
+}
+
+.celda {
+    -fx-text-fill: -c-4;
+    -fx-font-size: 13px;
+}
+
+.celda-monto {
+    -fx-font-family: "IBM Plex Mono Medium";
+    -fx-font-size: 15px;
+}
+
+.tabla-vacia {
+    -fx-padding: 36 22;
+}
+
+.vacio-titulo {
+    -fx-font-family: "Figtree Light SemiBold";
+    -fx-font-size: 16px;
+}
+
+.vacio-texto {
+    -fx-text-fill: -c-4;
+}
+
+/* ---------- Panel de captura ---------- */
+
+.panel {
+    -fx-background-color: -c-linea, -c-panel;
+    -fx-background-insets: 0, 0 0 0 1;
+    -fx-padding: 34 28 22 28;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.38), 26, 0, -8, 0);
+}
+
+.panel-titulo {
+    -fx-font-family: "Figtree Light SemiBold";
+    -fx-font-size: 20px;
+}
+
+.hoy {
+    -fx-background-color: -c-linea, -c-0;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 14, 13;
+    -fx-padding: 14 18;
+}
+
+.hoy-titulo {
+    -fx-font-family: "Figtree Light SemiBold";
+}
+
+.hoy-detalle {
+    -fx-text-fill: -c-texto-3;
+    -fx-font-size: 12px;
+}
+
+.hoy-total {
+    -fx-font-family: "IBM Plex Mono SemiBold";
+    -fx-font-size: 18px;
+}
+
+.panel-atajos {
+    -fx-text-fill: -c-texto-3;
+    -fx-font-size: 11px;
+    -fx-padding: 4 0 0 0;
+}
+
+.campo-etiqueta {
+    -fx-text-fill: -c-4;
+    -fx-font-family: "Figtree Light Medium";
+    -fx-font-size: 12px;
+}
+
+.caja-monto {
+    -fx-background-color: -c-linea, -c-0;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 18, 17;
+    -fx-padding: 16 20 12 20;
+}
+
+/* :focus-within (JavaFX 19+): el recuadro se marca cuando el campo de adentro tiene foco,
+   así se lee como campo y no como texto fijo */
+.caja-monto:focus-within {
+    -fx-background-color: -c-4, -c-0;
+    -fx-background-insets: 0, 1.5;
+    -fx-background-radius: 18, 16.5;
+}
+
+/* Error: anillo claro más grueso; el texto del error va justo debajo */
+.caja-monto-error,
+.caja-monto-error:focus-within {
+    -fx-background-color: -c-5, -c-0;
+    -fx-background-insets: 0, 2;
+    -fx-background-radius: 18, 16;
+}
+
+.campo-monto,
+.campo-monto:focused {
+    -fx-background-color: transparent;
+    -fx-text-fill: -c-5;
+    -fx-prompt-text-fill: -c-3;
+    -fx-font-family: "Figtree Light SemiBold";
+    -fx-font-size: 42px;
+    -fx-padding: 0;
+    -fx-highlight-fill: rgba(170, 162, 179, 0.4);
+    -fx-highlight-text-fill: -c-5;
+}
+
+.campo {
+    -fx-background-color: -c-linea, -c-0;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 12, 11;
+    -fx-text-fill: -c-5;
+    -fx-prompt-text-fill: -c-4;
+    -fx-highlight-fill: rgba(170, 162, 179, 0.4);
+    -fx-highlight-text-fill: -c-5;
+    -fx-padding: 12 14;
+}
+
+/* El foco es una capa de fondo más: no cambia el tamaño del campo */
+.campo:focused {
+    -fx-background-color: -c-4, -c-0;
+    -fx-background-insets: 0, 1.5;
+    -fx-background-radius: 12, 10.5;
+}
+
+.campo-chico {
+    -fx-padding: 6 10;
+}
+
+.error {
+    -fx-text-fill: -c-5;
+    -fx-font-family: "Figtree Light Medium";
+    -fx-font-size: 13px;
+}
+
+.chip {
+    -fx-background-color: rgba(226, 221, 231, 0.06);
+    -fx-background-radius: 999;
+    -fx-text-fill: -c-4;
+    -fx-font-family: "Figtree Light Medium";
+    -fx-font-size: 13px;
+    -fx-padding: 7 13 7 11;
+    -fx-graphic-text-gap: 8;
+}
+
+.chip:hover {
+    -fx-background-color: rgba(226, 221, 231, 0.11);
+    -fx-text-fill: -c-5;
+}
+
+.chip:selected {
+    -fx-background-color: -c-4, -c-2;
+    -fx-background-insets: 0, 1;
+    -fx-text-fill: -c-5;
+}
+
+.chip:focus-visible {
+    -fx-border-color: -c-4;
+    -fx-border-radius: 999px;
+    -fx-border-insets: -3;
+    -fx-border-width: 2;
+}
+
+/* ---------- Biblioteca de categorías (topología de Steam: lista + detalle) ---------- */
+
+.biblioteca-lista {
+    -fx-background-color: -c-linea, rgba(18, 16, 22, 0.55);
+    -fx-background-insets: 0, 0 1 0 0;
+    -fx-padding: 40 20 20 28;
+    -fx-min-width: 320;
+    -fx-pref-width: 320;
+    -fx-max-width: 320;
+}
+
+.lista-item {
+    -fx-padding: 12 12;
+    -fx-background-radius: 12;
+}
+
+.lista-item:hover {
+    -fx-background-color: -c-velo-hover;
+}
+
+.lista-item-elegido,
+.lista-item-elegido:hover {
+    -fx-background-color: rgba(226, 221, 231, 0.09);
+}
+
+/* ---------- Recurrentes ---------- */
+
+/* "Se repite" en el panel: una caja con el interruptor y, al activarlo, la frecuencia */
+.caja-repetir {
+    -fx-background-color: -c-linea, -c-0;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 14, 13;
+    -fx-padding: 14 16;
+}
+
+.caja-repetir .icono {
+    -fx-background-color: -c-4;
+}
+
+.repetir-texto {
+    -fx-font-family: "Figtree Light Medium";
+}
+
+/* Interruptor tipo iOS: la perilla se corre de izquierda a derecha con -fx-alignment */
+.interruptor {
+    -fx-background-color: -c-2;
+    -fx-background-radius: 999px;
+    -fx-background-insets: 0;
+    -fx-padding: 3;
+    -fx-min-width: 40;
+    -fx-max-width: 40;
+    -fx-min-height: 22;
+    -fx-max-height: 22;
+    -fx-alignment: center-left;
+    -fx-content-display: graphic-only;
+}
+
+.interruptor:selected {
+    -fx-background-color: -c-5;
+    -fx-alignment: center-right;
+}
+
+.interruptor-perilla {
+    -fx-background-color: -c-4;
+    -fx-background-radius: 999px;
+    -fx-min-width: 16;
+    -fx-min-height: 16;
+    -fx-max-width: 16;
+    -fx-max-height: 16;
+}
+
+.interruptor:selected .interruptor-perilla {
+    -fx-background-color: -c-0;
+}
+
+.interruptor:focus-visible {
+    -fx-border-color: -c-4;
+    -fx-border-width: 2;
+    -fx-border-radius: 999px;
+    -fx-border-insets: -3;
+}
+
+/* El N de "Cada N meses" */
+.campo.campo-cantidad {
+    -fx-pref-width: 56;
+    -fx-padding: 6 10;
+    -fx-alignment: center;
+}
+
+/* Próximos cobros en el resumen */
+.cobro-tarjeta {
+    -fx-background-color: -c-linea, -c-superficie;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 16, 15;
+    -fx-padding: 16 18;
+}
+
+.cobro-cuando {
+    -fx-text-fill: -c-4;
+    -fx-font-size: 12px;
+}
+
+.cobro-nombre {
+    -fx-font-family: "Figtree Light Medium";
+}
+
+.cobro-monto {
+    -fx-font-family: "IBM Plex Mono Medium";
+    -fx-font-size: 16px;
+}
+
+/* ↻ junto a los gastos que generó una recurrencia */
+.icono.icono-recurrente {
+    -fx-background-color: -c-texto-3;
+}
+
+.lista-item-pausado {
+    -fx-opacity: 0.55;
+}
+
+/* ---------- Esqueleto de carga ---------- */
+
+/* Los bloques los pinta Esqueleto.java (el brillo se anima desde código);
+   aquí solo va la geometría de la columna de lista, igual a .biblioteca-lista */
+.esqueleto-lista {
+    -fx-spacing: 14;
+    -fx-padding: 40 20 20 28;
+    -fx-min-width: 320;
+    -fx-max-width: 320;
+}
+
+/* ---------- DatePicker y su calendario ---------- */
+
+.date-picker {
+    -fx-background-color: -c-linea, -c-0;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 12, 11;
+    -fx-padding: 3 6 3 4;
+}
+
+.date-picker:focused {
+    -fx-background-color: -c-4, -c-0;
+    -fx-background-insets: 0, 1.5;
+    -fx-background-radius: 12, 10.5;
+}
+
+.date-picker > .date-picker-display-node {
+    -fx-text-fill: -c-5;
+    -fx-padding: 8 10;
+}
+
+.date-picker > .arrow-button {
+    -fx-background-color: transparent;
+}
+
+.date-picker > .arrow-button > .arrow {
+    -fx-background-color: -c-4;
+}
+
+.date-picker-popup {
+    -fx-background-color: rgba(226, 221, 231, 0.1), -c-1;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 16, 15;
+    -fx-padding: 10;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.55), 26, 0, 0, 10);
+}
+
+.date-picker-popup > .month-year-pane {
+    -fx-background-color: transparent;
+    -fx-padding: 6 6 10 6;
+}
+
+.date-picker-popup .spinner .label {
+    -fx-text-fill: -c-5;
+    -fx-font-family: "Figtree Light SemiBold";
+}
+
+.date-picker-popup .spinner .button {
+    -fx-background-color: transparent;
+}
+
+.date-picker-popup .spinner .left-arrow,
+.date-picker-popup .spinner .right-arrow {
+    -fx-background-color: -c-4;
+}
+
+.date-picker-popup .calendar-grid {
+    -fx-background-color: transparent;
+}
+
+/* Modena dibuja un borde claro alrededor de cada celda; aquí se anula */
+.date-picker-popup .day-name-cell {
+    -fx-text-fill: -c-texto-3;
+    -fx-font-size: 11px;
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.date-picker-popup .day-cell {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 9;
+    -fx-border-color: transparent;
+    -fx-text-fill: -c-5;
+    -fx-padding: 7;
+}
+
+.date-picker-popup .day-cell:hover,
+.date-picker-popup .day-cell:focused {
+    -fx-background-color: rgba(226, 221, 231, 0.09);
+    -fx-background-insets: 0;
+}
+
+.date-picker-popup .day-cell.previous-month,
+.date-picker-popup .day-cell.next-month {
+    -fx-text-fill: -c-3;
+}
+
+.date-picker-popup .day-cell.today {
+    -fx-background-color: -c-2;
+}
+
+.date-picker-popup .day-cell.selected {
+    -fx-background-color: -c-5;
+    -fx-text-fill: -c-0;
+}

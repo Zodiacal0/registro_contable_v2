@@ -3,6 +3,10 @@
 Fase 1: dominio + SQLite + migraciones + pruebas, con una consola temporal.
 Todavía sin UI gráfica.
 
+> Nota posterior: en la fase 2 la consola se reemplazó por JavaFX y `Categoria` ganó
+> un campo `color` (migración V2). Ver `02-interfaz-javafx.md`. Este documento describe
+> la fase 1 tal como quedó.
+
 ## Estructura
 
 ```

@@ -36,12 +36,12 @@ class GastoRepositorioTest {
     void migrarDosVecesNoFallaYDejaLaUltimaVersion() {
         var migrador = new Migrador(baseDeDatos);
         migrador.migrar();
-        assertEquals(1, migrador.versionActual());
+        assertEquals(5, migrador.versionActual());
     }
 
     @Test
     void guardaYRecuperaSinPerderCentavos() {
-        var comida = Categoria.nueva("Comida", AHORA);
+        var comida = Categoria.nueva("Comida", "#66C0F4", AHORA);
         categorias.guardar(comida);
         var gasto = Gasto.nuevo("Almuerzo", new BigDecimal("12.3"), LocalDate.of(2026, 10, 25), comida.id(), AHORA);
 
@@ -50,6 +50,7 @@ class GastoRepositorioTest {
         var leido = gastos.buscarPorId(gasto.id()).orElseThrow();
         assertEquals(gasto, leido); // records: equals compara todos los campos
         assertEquals(new BigDecimal("12.30"), leido.monto());
+        assertEquals("#66c0f4", categorias.buscarPorId(comida.id()).orElseThrow().color()); // normalizado
     }
 
     @Test

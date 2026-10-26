@@ -5,7 +5,7 @@ servicios externos.
 
 | Carpeta | Qué es | Stack |
 |---|---|---|
-| `Desktop/` | App de escritorio | Java 25, SQLite (sqlite-jdbc), Maven Wrapper; UI en JavaFX (próxima fase) |
+| `Desktop/` | App de escritorio | Java 25, JavaFX 25, SQLite (sqlite-jdbc), Maven Wrapper |
 | `Mobile/` | App Android (APK) | React Native + SQLite (pendiente) |
 
 ## Sincronización (plan)
@@ -24,3 +24,17 @@ El esquema ya está preparado para esto (UUID, timestamps, borrado lógico). Ver
 
 Simplicidad de Apple + lectura de wallet de Binance (saldos, cifras, verde/rojo) +
 paneles oscuros en capas de Steam.
+
+![Resumen del mes](Desktop/docs/img/resumen.png)
+
+## Ejecutar el desktop
+
+Requiere JDK 25 en `JAVA_HOME`.
+
+```
+cd Desktop
+mvnw.cmd test
+ejecutar.cmd
+```
+
+Guías por fase en `Desktop/docs/`.

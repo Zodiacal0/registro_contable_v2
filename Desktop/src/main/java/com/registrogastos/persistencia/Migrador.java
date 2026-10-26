@@ -20,7 +20,11 @@ public final class Migrador {
 
     /** En orden. La posición + 1 es el número de versión. Solo se agregan al final. */
     private static final List<String> MIGRACIONES = List.of(
-            "V1__esquema_inicial.sql"
+            "V1__esquema_inicial.sql",
+            "V2__color_categoria.sql",
+            "V3__paleta_violeta.sql",
+            "V4__categorias_en_tono.sql",
+            "V5__recurrencias.sql"
     );
 
     private final BaseDeDatos baseDeDatos;

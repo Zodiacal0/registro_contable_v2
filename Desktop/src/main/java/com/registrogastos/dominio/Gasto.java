@@ -10,7 +10,8 @@ import java.util.UUID;
 /**
  * Un gasto registrado. El dinero va en BigDecimal (nunca double: 0.1 + 0.2 != 0.3).
  *
- * @param categoriaId puede ser null (gasto sin categoría)
+ * @param categoriaId   puede ser null (gasto sin categoría)
+ * @param recurrenciaId de qué recurrencia salió; null = gasto registrado a mano
  */
 public record Gasto(
         String id,
@@ -18,6 +19,7 @@ public record Gasto(
         BigDecimal monto,
         LocalDate fecha,
         String categoriaId,
+        String recurrenciaId,
         Instant creadoEn,
         Instant actualizadoEn,
         boolean eliminado) {
@@ -43,15 +45,25 @@ public record Gasto(
     public static Gasto nuevo(String descripcion, BigDecimal monto, LocalDate fecha,
                               String categoriaId, Instant ahora) {
         return new Gasto(UUID.randomUUID().toString(), descripcion, monto, fecha,
-                categoriaId, ahora, ahora, false);
+                categoriaId, null, ahora, ahora, false);
+    }
+
+    /** El cobro de una recurrencia en una fecha; su id es determinístico (ver Recurrencia.idGasto). */
+    public static Gasto deRecurrencia(Recurrencia recurrencia, LocalDate fecha, Instant ahora) {
+        return new Gasto(recurrencia.idGasto(fecha), recurrencia.descripcion(), recurrencia.monto(),
+                fecha, recurrencia.categoriaId(), recurrencia.id(), ahora, ahora, false);
+    }
+
+    public boolean esRecurrente() {
+        return recurrenciaId != null;
     }
 
     public Gasto editar(String descripcion, BigDecimal monto, LocalDate fecha,
                         String categoriaId, Instant ahora) {
-        return new Gasto(id, descripcion, monto, fecha, categoriaId, creadoEn, ahora, eliminado);
+        return new Gasto(id, descripcion, monto, fecha, categoriaId, recurrenciaId, creadoEn, ahora, eliminado);
     }
 
     public Gasto eliminar(Instant ahora) {
-        return new Gasto(id, descripcion, monto, fecha, categoriaId, creadoEn, ahora, true);
+        return new Gasto(id, descripcion, monto, fecha, categoriaId, recurrenciaId, creadoEn, ahora, true);
     }
 }

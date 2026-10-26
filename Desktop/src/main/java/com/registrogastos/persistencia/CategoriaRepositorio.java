@@ -21,18 +21,20 @@ public final class CategoriaRepositorio {
     /** Inserta si el id no existe; si existe, lo actualiza ("upsert"). */
     public void guardar(Categoria categoria) {
         String sql = """
-                INSERT INTO categorias (id, nombre, actualizado_en, eliminado)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO categorias (id, nombre, color, actualizado_en, eliminado)
+                VALUES (?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     nombre = excluded.nombre,
+                    color = excluded.color,
                     actualizado_en = excluded.actualizado_en,
                     eliminado = excluded.eliminado
                 """;
         try (var conexion = baseDeDatos.abrirConexion(); var ps = conexion.prepareStatement(sql)) {
             ps.setString(1, categoria.id());
             ps.setString(2, categoria.nombre());
-            ps.setLong(3, categoria.actualizadoEn().toEpochMilli());
-            ps.setInt(4, categoria.eliminado() ? 1 : 0);
+            ps.setString(3, categoria.color());
+            ps.setLong(4, categoria.actualizadoEn().toEpochMilli());
+            ps.setInt(5, categoria.eliminado() ? 1 : 0);
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new ErrorDePersistencia("No se pudo guardar la categoría " + categoria.id(), e);
@@ -70,6 +72,7 @@ public final class CategoriaRepositorio {
         return new Categoria(
                 rs.getString("id"),
                 rs.getString("nombre"),
+                rs.getString("color"),
                 Instant.ofEpochMilli(rs.getLong("actualizado_en")),
                 rs.getInt("eliminado") == 1);
     }

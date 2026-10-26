@@ -13,3 +13,6 @@ Desktop/target/
 # React Native (cuando exista)
 Mobile/node_modules/
 Mobile/android/app/build/
+
+# Caché local del detector de diseño
+.impeccable/*.cache.json
