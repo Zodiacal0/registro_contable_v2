@@ -21,6 +21,8 @@ import com.registrogastos.servicio.MetaServicio;
 import com.registrogastos.servicio.PresupuestoServicio;
 import com.registrogastos.servicio.RecurrenciaServicio;
 import com.registrogastos.servicio.Servicios;
+import com.registrogastos.sincronizacion.Cambios;
+import com.registrogastos.sincronizacion.SincronizacionServicio;
 import com.registrogastos.ui.ModeloUi;
 import com.registrogastos.ui.VentanaPrincipal;
 import javafx.application.Application;
@@ -63,7 +65,22 @@ public final class App extends Application {
     @Override
     public void start(Stage escenario) {
         VentanaPrincipal.cargarFuentes();
+        iniciarSincronizacion(servicios);
         new VentanaPrincipal(new ModeloUi(servicios)).mostrar(escenario);
+    }
+
+    @Override
+    public void stop() {
+        servicios.sincronizacion().detener();
+    }
+
+    /** El servidor de sync arranca con la app; si el puerto falla, la app sigue sin sincronizar. */
+    public static void iniciarSincronizacion(Servicios servicios) {
+        try {
+            servicios.sincronizacion().iniciar();
+        } catch (java.io.IOException e) {
+            System.err.println("No se pudo iniciar el servidor de sincronización: " + e.getMessage());
+        }
     }
 
     /** -Dgastos.db=ruta permite usar otra base (p. ej. una de pruebas). */
@@ -96,7 +113,8 @@ public final class App extends Application {
                 cuentas,
                 new AnaliticaServicio(gastos, ingresos, gastoServicio, recurrencias, metas, cuentas::conversor, reloj),
                 new PresupuestoServicio(new LineaPlanRepositorio(baseDeDatos), ajustes, ingresos, gastoServicio,
-                        recurrencias, cuentas::conversor, reloj));
+                        recurrencias, cuentas::conversor, reloj),
+                new SincronizacionServicio(new Cambios(baseDeDatos), ajustes, reloj));
     }
 
     public static void main(String[] args) {

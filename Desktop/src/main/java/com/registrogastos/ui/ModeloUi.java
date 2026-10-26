@@ -56,6 +56,7 @@ public final class ModeloUi {
     private final CuentaServicio cuentas;
     private final AnaliticaServicio analitica;
     private final PresupuestoServicio presupuestos;
+    private final com.registrogastos.sincronizacion.SincronizacionServicio sincronizacion;
     private final ObjectProperty<YearMonth> mes;
     // Se leen junto con el resumen en recargar(): una sola señal de "cambiaron los datos"
     private List<Recurrencia> listaRecurrencias = List.of();
@@ -86,6 +87,8 @@ public final class ModeloUi {
         this.cuentas = servicios.cuentas();
         this.analitica = servicios.analitica();
         this.presupuestos = servicios.presupuestos();
+        this.sincronizacion = servicios.sincronizacion();
+        sincronizacion.alAplicar(this::alSincronizar);
         // Al abrir la app se registran los cobros recurrentes que vencieron desde la última vez
         recurrencias.generarPendientes();
         this.mes = new SimpleObjectProperty<>(servicio.mesActual());
@@ -240,6 +243,17 @@ public final class ModeloUi {
      * Una sola señal de "cambiaron los datos": las recurrencias se leen ANTES de publicar el
      * resumen, así cualquier vista que escuche el resumen ya las encuentra actualizadas.
      */
+    /** Llegaron cambios de otro dispositivo (hilo del servidor): se recarga en el hilo de JavaFX. */
+    public void alSincronizar(int aplicadas) {
+        if (aplicadas > 0) {
+            javafx.application.Platform.runLater(this::recargar);
+        }
+    }
+
+    public com.registrogastos.sincronizacion.SincronizacionServicio sincronizacion() {
+        return sincronizacion;
+    }
+
     private void recargar() {
         listaCuentas = cuentas.listar();
         plan = presupuestos.plan(mes.get());

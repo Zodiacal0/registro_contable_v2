@@ -11,5 +11,6 @@ public record Servicios(
         DeudaServicio deudas,
         CuentaServicio cuentas,
         AnaliticaServicio analitica,
-        PresupuestoServicio presupuestos) {
+        PresupuestoServicio presupuestos,
+        com.registrogastos.sincronizacion.SincronizacionServicio sincronizacion) {
 }

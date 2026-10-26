@@ -1536,3 +1536,13 @@
     -fx-padding: 4 10;
     -fx-font-size: 12px;
 }
+
+/* ---------- Sincronizar ---------- */
+
+/* El QR va sobre una tarjeta del color de fondo: los módulos claros ya contrastan solos */
+.qr {
+    -fx-background-color: -c-linea, -c-0;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 16, 15;
+    -fx-padding: 14;
+}

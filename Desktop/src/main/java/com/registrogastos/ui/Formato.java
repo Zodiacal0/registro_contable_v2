@@ -138,6 +138,21 @@ final class Formato {
         return "En " + dias + " días  ·  " + fecha.format(CORTA).replace(".", "");
     }
 
+    /** "hace 5 min", "hace 2 h", o la fecha si fue otro día. */
+    static String cuandoInstante(java.time.Instant instante, LocalDate hoy) {
+        long minutos = java.time.Duration.between(instante, java.time.Instant.now()).toMinutes();
+        if (minutos < 1) {
+            return "hace un momento";
+        }
+        if (minutos < 60) {
+            return "hace " + minutos + " min";
+        }
+        if (minutos < 24 * 60) {
+            return "hace " + (minutos / 60) + " h";
+        }
+        return "el " + dia(instante.atZone(java.time.ZoneId.systemDefault()).toLocalDate(), hoy).toLowerCase();
+    }
+
     static String porcentaje(double proporcion) {
         return Math.round(proporcion * 100) + "%";
     }

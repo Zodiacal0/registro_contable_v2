@@ -49,6 +49,18 @@
             <version>${javafx.version}</version>
         </dependency>
 
+        <!-- Sincronización: JSON del protocolo y el QR de emparejamiento (ambos sin dependencias) -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20240303</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+
         <!-- Solo para pruebas: no viaja con la aplicación final -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

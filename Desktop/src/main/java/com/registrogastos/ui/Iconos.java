@@ -26,6 +26,8 @@ enum Iconos {
     ANALITICAS("M4 19h16v1.6H4zM5 13h3.2v5H5zM10.4 9h3.2v9h-3.2zM15.8 5H19v13h-3.2z"),
     // Libreta de cuentas: hoja con una fila ancha arriba y casillas abajo
     PRESUPUESTO("M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM8 6h8v3H8zM8 11h3v2H8zM13 11h3v2h-3zM8 15h3v2H8zM13 15h3v2h-3z"),
+    // Código QR: tres esquinas y un módulo suelto
+    SINCRONIZAR("M4 4h6v6H4zm1.5 1.5v3h3v-3zM14 4h6v6h-6zm1.5 1.5v3h3v-3zM4 14h6v6H4zm1.5 1.5v3h3v-3zM14 14h2.5v2.5H14zM17.5 17.5H20V20h-2.5zM17.5 14H20v2.5h-2.5zM14 17.5h2.5V20H14z"),
     OCULTAR_PANEL("M5.6 4.6 4 6.2 9.8 12 4 17.8 5.6 19.4 13 12zM12.6 4.6 11 6.2 16.8 12 11 17.8 12.6 19.4 20 12z"),
     SUBE("M12 6 19 17H5z"),
     BAJA("M5 7h14l-7 11z"),

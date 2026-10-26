@@ -63,6 +63,7 @@ public final class CapturaPantallas extends Application {
         servicio = servicios.gastos();
 
         VentanaPrincipal.cargarFuentes();
+        App.iniciarSincronizacion(servicios);
         var modelo = new ModeloUi(servicios);
         ventana = new VentanaPrincipal(modelo);
         ventana.mostrar(escenario);
@@ -117,6 +118,8 @@ public final class CapturaPantallas extends Application {
                 () -> ir("Cuentas"),
                 () -> { },
                 () -> capturar(escena.getRoot(), "4h-cuentas"),
+                () -> ir("Sincronizar"),
+                () -> capturar(escena.getRoot(), "4m-sincronizar"),
                 () -> ir("Presupuesto"),
                 () -> capturar(escena.getRoot(), "4k-presupuesto"),
                 () -> escena.getRoot().lookupAll(".vista").stream()
