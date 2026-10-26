@@ -16,6 +16,10 @@ enum Iconos {
     MAS("M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7z"),
     // Flechas en círculo: ícono "sync" de Material Icons (Google, licencia Apache 2.0)
     REPETIR("M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"),
+    // Bandera: metas de ahorro
+    META("M5 3h2v18H5zM8 4h11l-2.6 4.5L19 13H8z"),
+    // Tarjeta: banda superior y cuerpo separados por un hueco (la "banda magnética")
+    DEUDA("M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1H3zM3 10.5h18V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM6 14.5v2h5v-2z"),
     OCULTAR_PANEL("M5.6 4.6 4 6.2 9.8 12 4 17.8 5.6 19.4 13 12zM12.6 4.6 11 6.2 16.8 12 11 17.8 12.6 19.4 20 12z"),
     SUBE("M12 6 19 17H5z"),
     BAJA("M5 7h14l-7 11z"),

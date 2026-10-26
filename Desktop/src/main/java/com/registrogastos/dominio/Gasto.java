@@ -1,7 +1,6 @@
 package com.registrogastos.dominio;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Objects;
@@ -12,6 +11,7 @@ import java.util.UUID;
  *
  * @param categoriaId   puede ser null (gasto sin categoría)
  * @param recurrenciaId de qué recurrencia salió; null = gasto registrado a mano
+ * @param deudaId       si es un abono, a qué deuda (tipo DEBO) pagó; null = no es abono
  */
 public record Gasto(
         String id,
@@ -20,6 +20,7 @@ public record Gasto(
         LocalDate fecha,
         String categoriaId,
         String recurrenciaId,
+        String deudaId,
         Instant creadoEn,
         Instant actualizadoEn,
         boolean eliminado) {
@@ -29,29 +30,36 @@ public record Gasto(
         Objects.requireNonNull(fecha, "fecha");
         Objects.requireNonNull(creadoEn, "creadoEn");
         Objects.requireNonNull(actualizadoEn, "actualizadoEn");
-        if (descripcion == null || descripcion.isBlank()) {
-            throw new IllegalArgumentException("La descripción no puede estar vacía");
-        }
-        if (monto == null || monto.signum() <= 0) {
-            throw new IllegalArgumentException("El monto debe ser mayor que cero");
-        }
-        if (monto.stripTrailingZeros().scale() > 2) {
-            throw new IllegalArgumentException("El monto admite máximo 2 decimales: " + monto);
-        }
-        descripcion = descripcion.strip();
-        monto = monto.setScale(2, RoundingMode.UNNECESSARY); // 5 -> 5.00
+        descripcion = Montos.textoObligatorio(descripcion, "La descripción no puede estar vacía");
+        monto = Montos.positivo(monto); // 5 -> 5.00
     }
 
     public static Gasto nuevo(String descripcion, BigDecimal monto, LocalDate fecha,
                               String categoriaId, Instant ahora) {
         return new Gasto(UUID.randomUUID().toString(), descripcion, monto, fecha,
-                categoriaId, null, ahora, ahora, false);
+                categoriaId, null, null, ahora, ahora, false);
     }
 
     /** El cobro de una recurrencia en una fecha; su id es determinístico (ver Recurrencia.idGasto). */
     public static Gasto deRecurrencia(Recurrencia recurrencia, LocalDate fecha, Instant ahora) {
         return new Gasto(recurrencia.idGasto(fecha), recurrencia.descripcion(), recurrencia.monto(),
-                fecha, recurrencia.categoriaId(), recurrencia.id(), ahora, ahora, false);
+                fecha, recurrencia.categoriaId(), recurrencia.id(), null, ahora, ahora, false);
+    }
+
+    /**
+     * Abono a una deuda que debo: sale dinero, así que es un gasto, ligado a su deuda.
+     *
+     * @param descripcion la del usuario; si viene vacía o null, "Abono · nombre de la deuda"
+     */
+    public static Gasto abono(Deuda deuda, String descripcion, BigDecimal monto, LocalDate fecha,
+                              String categoriaId, Instant ahora) {
+        String texto = descripcion == null || descripcion.isBlank() ? "Abono · " + deuda.nombre() : descripcion;
+        return new Gasto(UUID.randomUUID().toString(), texto, monto, fecha,
+                categoriaId, null, deuda.id(), ahora, ahora, false);
+    }
+
+    public boolean esAbono() {
+        return deudaId != null;
     }
 
     public boolean esRecurrente() {
@@ -60,10 +68,10 @@ public record Gasto(
 
     public Gasto editar(String descripcion, BigDecimal monto, LocalDate fecha,
                         String categoriaId, Instant ahora) {
-        return new Gasto(id, descripcion, monto, fecha, categoriaId, recurrenciaId, creadoEn, ahora, eliminado);
+        return new Gasto(id, descripcion, monto, fecha, categoriaId, recurrenciaId, deudaId, creadoEn, ahora, eliminado);
     }
 
     public Gasto eliminar(Instant ahora) {
-        return new Gasto(id, descripcion, monto, fecha, categoriaId, recurrenciaId, creadoEn, ahora, true);
+        return new Gasto(id, descripcion, monto, fecha, categoriaId, recurrenciaId, deudaId, creadoEn, ahora, true);
     }
 }

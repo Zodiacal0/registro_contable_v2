@@ -29,6 +29,10 @@ typography:
     fontSize: "64px"
     fontWeight: 600
     lineHeight: 1
+  cifra-detalle:
+    fontFamily: "Figtree Light SemiBold"
+    fontSize: "44px"
+    fontWeight: 600
   cifra-campo:
     fontFamily: "Figtree Light SemiBold"
     fontSize: "42px"

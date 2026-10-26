@@ -26,8 +26,8 @@ public final class GastoRepositorio {
 
     private static final String INSERTAR = """
             INSERT INTO gastos (id, descripcion, monto_centavos, fecha, categoria_id, recurrencia_id,
-                                creado_en, actualizado_en, eliminado)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                deuda_id, creado_en, actualizado_en, eliminado)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
     /** Inserta o, si el id ya existe, actualiza ("upsert"). */
@@ -61,9 +61,10 @@ public final class GastoRepositorio {
             ps.setString(4, gasto.fecha().toString());
             ps.setString(5, gasto.categoriaId());   // null -> NULL en SQL
             ps.setString(6, gasto.recurrenciaId());
-            ps.setLong(7, gasto.creadoEn().toEpochMilli());
-            ps.setLong(8, gasto.actualizadoEn().toEpochMilli());
-            ps.setInt(9, gasto.eliminado() ? 1 : 0);
+            ps.setString(7, gasto.deudaId());
+            ps.setLong(8, gasto.creadoEn().toEpochMilli());
+            ps.setLong(9, gasto.actualizadoEn().toEpochMilli());
+            ps.setInt(10, gasto.eliminado() ? 1 : 0);
             return ps.executeUpdate(); // filas afectadas: 0 si DO NOTHING no insertó
         } catch (SQLException e) {
             throw new ErrorDePersistencia("No se pudo guardar el gasto " + gasto.id(), e);
@@ -72,9 +73,19 @@ public final class GastoRepositorio {
 
     /** Cobros no eliminados que generó una recurrencia, del más reciente al más antiguo. */
     public List<Gasto> listarPorRecurrencia(String recurrenciaId) {
-        String sql = "SELECT * FROM gastos WHERE eliminado = 0 AND recurrencia_id = ? ORDER BY fecha DESC";
+        return listarPor("recurrencia_id", recurrenciaId);
+    }
+
+    /** Abonos (gastos) hechos a una deuda, del más reciente al más antiguo. */
+    public List<Gasto> listarPorDeuda(String deudaId) {
+        return listarPor("deuda_id", deudaId);
+    }
+
+    /** @param columna nombre fijo del código (nunca texto del usuario): es seguro ponerlo en el SQL */
+    private List<Gasto> listarPor(String columna, String valor) {
+        String sql = "SELECT * FROM gastos WHERE eliminado = 0 AND " + columna + " = ? ORDER BY fecha DESC, creado_en DESC";
         try (var conexion = baseDeDatos.abrirConexion(); var ps = conexion.prepareStatement(sql)) {
-            ps.setString(1, recurrenciaId);
+            ps.setString(1, valor);
             try (var rs = ps.executeQuery()) {
                 var resultado = new ArrayList<Gasto>();
                 while (rs.next()) {
@@ -83,7 +94,7 @@ public final class GastoRepositorio {
                 return resultado;
             }
         } catch (SQLException e) {
-            throw new ErrorDePersistencia("No se pudo listar los cobros de " + recurrenciaId, e);
+            throw new ErrorDePersistencia("No se pudo listar los gastos de " + valor, e);
         }
     }
 
@@ -130,6 +141,7 @@ public final class GastoRepositorio {
                 LocalDate.parse(rs.getString("fecha")),
                 rs.getString("categoria_id"),
                 rs.getString("recurrencia_id"),
+                rs.getString("deuda_id"),
                 Instant.ofEpochMilli(rs.getLong("creado_en")),
                 Instant.ofEpochMilli(rs.getLong("actualizado_en")),
                 rs.getInt("eliminado") == 1);

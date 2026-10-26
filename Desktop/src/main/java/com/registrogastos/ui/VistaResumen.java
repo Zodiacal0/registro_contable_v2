@@ -442,6 +442,9 @@ final class VistaResumen extends ScrollPane implements Revelable {
         if (gasto.esRecurrente()) {
             descripcion.getChildren().add(Iconos.REPETIR.crear("icono-chico", "icono-recurrente"));
         }
+        if (gasto.esAbono()) {
+            descripcion.getChildren().add(Iconos.DEUDA.crear("icono-chico", "icono-recurrente"));
+        }
 
         var fila = new HBox(
                 columna(descripcion, -1, Pos.CENTER_LEFT),

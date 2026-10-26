@@ -40,21 +40,12 @@ public record Recurrencia(
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(inicio, "inicio");
         Objects.requireNonNull(actualizadoEn, "actualizadoEn");
-        if (descripcion == null || descripcion.isBlank()) {
-            throw new IllegalArgumentException("La descripción no puede estar vacía");
-        }
-        if (monto == null || monto.signum() <= 0) {
-            throw new IllegalArgumentException("El monto debe ser mayor que cero");
-        }
-        if (monto.stripTrailingZeros().scale() > 2) {
-            throw new IllegalArgumentException("El monto admite máximo 2 decimales: " + monto);
-        }
         if (cada <= 0) {
             throw new IllegalArgumentException("La frecuencia debe ser de al menos 1");
         }
         Objects.requireNonNull(unidad, "unidad");
-        descripcion = descripcion.strip();
-        monto = monto.setScale(2, RoundingMode.UNNECESSARY);
+        descripcion = Montos.textoObligatorio(descripcion, "La descripción no puede estar vacía");
+        monto = Montos.positivo(monto);
     }
 
     public static Recurrencia nueva(String descripcion, BigDecimal monto, String categoriaId,

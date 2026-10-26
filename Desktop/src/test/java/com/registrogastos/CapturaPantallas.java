@@ -1,8 +1,12 @@
 package com.registrogastos;
 
+import com.registrogastos.dominio.Deuda;
 import com.registrogastos.dominio.Recurrencia;
+import com.registrogastos.servicio.DeudaServicio;
 import com.registrogastos.servicio.GastoServicio;
+import com.registrogastos.servicio.MetaServicio;
 import com.registrogastos.servicio.RecurrenciaServicio;
+import com.registrogastos.servicio.Servicios;
 import com.registrogastos.ui.ModeloUi;
 import com.registrogastos.ui.VentanaPrincipal;
 import javafx.animation.PauseTransition;
@@ -55,7 +59,7 @@ public final class CapturaPantallas extends Application {
         servicio = servicios.gastos();
 
         VentanaPrincipal.cargarFuentes();
-        var modelo = new ModeloUi(servicios.gastos(), servicios.recurrencias());
+        var modelo = new ModeloUi(servicios);
         ventana = new VentanaPrincipal(modelo);
         ventana.mostrar(escenario);
         escena = escenario.getScene();
@@ -85,6 +89,26 @@ public final class CapturaPantallas extends Application {
                     espera.play();
                 },
                 () -> ((ToggleButton) escena.getRoot().lookup(".repetir")).fire(),
+                // Metas y deudas: un paso extra de espera para que termine la entrada en cascada
+                () -> ((ToggleButton) escena.getRoot().lookupAll(".nav-item").toArray()[3]).fire(),
+                () -> { },
+                () -> capturar(escena.getRoot(), "4c-metas"),
+                () -> ((ToggleButton) escena.getRoot().lookupAll(".nav-item").toArray()[4]).fire(),
+                () -> { },
+                () -> capturar(escena.getRoot(), "4d-deudas"),
+                // El panel con "Va a una deuda o meta": primero una deuda, luego una meta
+                () -> ((ToggleButton) escena.getRoot().lookup(".destinar")).fire(),
+                () -> capturar(escena.getRoot(), "4e-destino-deuda"),
+                () -> escena.getRoot().lookupAll(".chip").stream()
+                        .filter(n -> n.getUserData() instanceof com.registrogastos.servicio.EstadoMeta)
+                        .findFirst().ifPresent(n -> ((ToggleButton) n).fire()),
+                () -> capturar(escena.getRoot(), "4f-destino-meta"),
+                // Aportar desde el panel: el destino se apaga solo y queda la confirmación
+                () -> {
+                    ((TextField) escena.getRoot().lookup(".campo-monto")).setText("150");
+                    ((Button) escena.getRoot().lookup(".boton-ancho")).fire();
+                },
+                () -> capturar(escena.getRoot(), "4g-aporte-hecho"),
                 () -> ((ToggleButton) escena.getRoot().lookupAll(".nav-item").toArray()[0]).fire(),
                 modelo::mesSiguiente,
                 () -> capturar(escena.getRoot(), "5-mes-vacio"),
@@ -156,7 +180,7 @@ public final class CapturaPantallas extends Application {
         System.out.println("Captura: " + salida.resolve(nombre + ".png"));
     }
 
-    static void sembrar(App.Servicios servicios) {
+    static void sembrar(Servicios servicios) {
         GastoServicio s = servicios.gastos();
         RecurrenciaServicio r = servicios.recurrencias();
         LocalDate hoy = s.hoy();
@@ -188,6 +212,31 @@ public final class CapturaPantallas extends Application {
         r.crear("Agua", new BigDecimal("24.50"), hogar, 2, mensual, hoy.minusDays(10).minusMonths(2));
         r.crear("Dominio web", new BigDecimal("18.00"), suscripciones, 12, mensual, hoy.plusDays(12).minusYears(1));
         r.crear("Gimnasio", new BigDecimal("30.00"), ocio, 1, mensual, hoy.plusDays(6));
+
+        // Metas de ahorro: una a medias con fecha, otra cerca y una ya completada
+        MetaServicio m = servicios.metas();
+        var emergencia = m.crear("Fondo de emergencia", new BigDecimal("3000"), hoy.plusMonths(8));
+        m.aportar(emergencia.id(), new BigDecimal("350"), hoy.minusMonths(2));
+        m.aportar(emergencia.id(), new BigDecimal("400"), hoy.minusMonths(1));
+        m.aportar(emergencia.id(), new BigDecimal("300"), hoy.minusDays(3));
+        var laptop = m.crear("Laptop nueva", new BigDecimal("1200"), hoy.plusMonths(4));
+        m.aportar(laptop.id(), new BigDecimal("500"), hoy.minusMonths(1));
+        m.aportar(laptop.id(), new BigDecimal("200"), hoy.minusDays(8));
+        var bici = m.crear("Bicicleta", new BigDecimal("450"), null);
+        m.aportar(bici.id(), new BigDecimal("450"), hoy.minusMonths(2));
+
+        // Deudas: dos que debo (sus abonos son gastos) y una que me deben
+        DeudaServicio d = servicios.deudas();
+        var tarjeta = d.crear("Tarjeta de crédito", Deuda.Tipo.DEBO, new BigDecimal("1800"),
+                hoy.minusMonths(3), hoy.plusMonths(6));
+        d.abonar(tarjeta.id(), new BigDecimal("300"), hoy.minusMonths(2), null);
+        d.abonar(tarjeta.id(), new BigDecimal("300"), hoy.minusMonths(1), null);
+        d.abonar(tarjeta.id(), new BigDecimal("250"), hoy.minusDays(5), null);
+        var prestamo = d.crear("Préstamo de Ana", Deuda.Tipo.DEBO, new BigDecimal("500"), hoy.minusMonths(1), null);
+        d.abonar(prestamo.id(), new BigDecimal("100"), hoy.minusDays(12), null);
+        var concierto = d.crear("Carlos · entradas del concierto", Deuda.Tipo.ME_DEBEN, new BigDecimal("120"),
+                hoy.minusDays(10), null);
+        d.abonar(concierto.id(), new BigDecimal("40"), hoy.minusDays(2), null);
     }
 
     private static void registrar(GastoServicio s, String descripcion, String monto, LocalDate fecha, String categoria) {

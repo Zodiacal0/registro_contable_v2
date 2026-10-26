@@ -59,6 +59,8 @@ public final class VentanaPrincipal {
     private final VistaResumen vistaResumen;
     private final VistaCategorias vistaCategorias;
     private final VistaRecurrentes vistaRecurrentes;
+    private final VistaMetas vistaMetas;
+    private final VistaDeudas vistaDeudas;
     private final PanelGasto panel;
 
     /** Si el panel de captura está abierto. Se recuerda entre sesiones. */
@@ -74,6 +76,8 @@ public final class VentanaPrincipal {
         this.vistaResumen = new VistaResumen(modelo);
         this.vistaCategorias = new VistaCategorias(modelo);
         this.vistaRecurrentes = new VistaRecurrentes(modelo);
+        this.vistaMetas = new VistaMetas(modelo);
+        this.vistaDeudas = new VistaDeudas(modelo);
         this.panel = new PanelGasto(modelo, () -> panelVisible.set(false));
 
         marco.setLeft(riel());
@@ -243,6 +247,8 @@ public final class VentanaPrincipal {
         var resumen = itemNavegacion("Resumen", Iconos.RESUMEN, grupo, vistaResumen);
         var categorias = itemNavegacion("Categorías", Iconos.CATEGORIAS, grupo, vistaCategorias);
         var recurrentes = itemNavegacion("Recurrentes", Iconos.REPETIR, grupo, vistaRecurrentes);
+        var metas = itemNavegacion("Metas", Iconos.META, grupo, vistaMetas);
+        var deudas = itemNavegacion("Deudas", Iconos.DEUDA, grupo, vistaDeudas);
         resumen.setSelected(true);
         // Un ToggleGroup permite deseleccionar todo con un clic; aquí siempre debe haber uno activo
         grupo.selectedToggleProperty().addListener((obs, anterior, nuevo) -> {
@@ -253,7 +259,7 @@ public final class VentanaPrincipal {
 
         var relleno = new Region();
         VBox.setVgrow(relleno, Priority.ALWAYS);
-        var riel = new VBox(10, resumen, categorias, recurrentes, botonCapturar(), relleno);
+        var riel = new VBox(10, resumen, categorias, recurrentes, metas, deudas, botonCapturar(), relleno);
         riel.setAlignment(Pos.TOP_CENTER);
         riel.getStyleClass().add("riel");
         return riel;

@@ -36,7 +36,7 @@ class GastoRepositorioTest {
     void migrarDosVecesNoFallaYDejaLaUltimaVersion() {
         var migrador = new Migrador(baseDeDatos);
         migrador.migrar();
-        assertEquals(5, migrador.versionActual());
+        assertEquals(6, migrador.versionActual());
     }
 
     @Test

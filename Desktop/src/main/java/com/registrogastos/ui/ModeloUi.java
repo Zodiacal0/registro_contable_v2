@@ -1,12 +1,20 @@
 package com.registrogastos.ui;
 
+import com.registrogastos.dominio.Abono;
 import com.registrogastos.dominio.Categoria;
+import com.registrogastos.dominio.Deuda;
 import com.registrogastos.dominio.Gasto;
+import com.registrogastos.dominio.Meta;
 import com.registrogastos.dominio.Recurrencia;
+import com.registrogastos.servicio.DeudaServicio;
+import com.registrogastos.servicio.EstadoDeuda;
+import com.registrogastos.servicio.EstadoMeta;
 import com.registrogastos.servicio.GastoServicio;
+import com.registrogastos.servicio.MetaServicio;
 import com.registrogastos.servicio.ProximoCobro;
 import com.registrogastos.servicio.RecurrenciaServicio;
 import com.registrogastos.servicio.ResumenMes;
+import com.registrogastos.servicio.Servicios;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -32,9 +40,13 @@ public final class ModeloUi {
 
     private final GastoServicio servicio;
     private final RecurrenciaServicio recurrencias;
+    private final MetaServicio metas;
+    private final DeudaServicio deudas;
     private final ObjectProperty<YearMonth> mes;
-    /** Recurrencias (activas y en pausa); se actualiza junto con el resumen. */
+    // Se leen junto con el resumen en recargar(): una sola señal de "cambiaron los datos"
     private List<Recurrencia> listaRecurrencias = List.of();
+    private List<EstadoMeta> listaMetas = List.of();
+    private List<EstadoDeuda> listaDeudas = List.of();
     // Wrapper: dentro se escribe, hacia afuera solo se expone la versión de lectura
     private final ReadOnlyObjectWrapper<ResumenMes> resumen = new ReadOnlyObjectWrapper<>();
     /** Gasto cargado en el panel para editar; null = el panel está en modo "nuevo". */
@@ -50,9 +62,11 @@ public final class ModeloUi {
     /** Id del último gasto registrado, para resaltarlo una vez en la tabla. */
     private String ultimoRegistradoId;
 
-    public ModeloUi(GastoServicio servicio, RecurrenciaServicio recurrencias) {
-        this.servicio = servicio;
-        this.recurrencias = recurrencias;
+    public ModeloUi(Servicios servicios) {
+        this.servicio = servicios.gastos();
+        this.recurrencias = servicios.recurrencias();
+        this.metas = servicios.metas();
+        this.deudas = servicios.deudas();
         // Al abrir la app se registran los cobros recurrentes que vencieron desde la última vez
         recurrencias.generarPendientes();
         this.mes = new SimpleObjectProperty<>(servicio.mesActual());
@@ -208,7 +222,99 @@ public final class ModeloUi {
      */
     private void recargar() {
         listaRecurrencias = recurrencias.listar();
+        listaMetas = metas.listar();
+        listaDeudas = deudas.listar();
         resumen.set(servicio.resumen(mes.get()));
+    }
+
+    // ---- Metas de ahorro ----
+
+    public List<EstadoMeta> metas() {
+        return listaMetas;
+    }
+
+    public List<Abono> aportesDe(String metaId) {
+        return metas.aportesDe(metaId);
+    }
+
+    public Meta crearMeta(String nombre, BigDecimal objetivo, LocalDate fechaObjetivo) {
+        Meta meta = metas.crear(nombre, objetivo, fechaObjetivo);
+        recargar();
+        return meta;
+    }
+
+    public void editarMeta(String id, String nombre, BigDecimal objetivo, LocalDate fechaObjetivo) {
+        metas.editar(id, nombre, objetivo, fechaObjetivo);
+        recargar();
+    }
+
+    public void eliminarMeta(String id) {
+        metas.eliminar(id);
+        recargar();
+    }
+
+    public void aportar(String metaId, BigDecimal monto, LocalDate fecha) {
+        metas.aportar(metaId, monto, fecha);
+        recargar();
+    }
+
+    public void retirar(String metaId, BigDecimal monto, LocalDate fecha) {
+        metas.retirar(metaId, monto, fecha);
+        recargar();
+    }
+
+    public void eliminarAporte(String aporteId) {
+        metas.eliminarAporte(aporteId);
+        recargar();
+    }
+
+    // ---- Deudas ----
+
+    public List<EstadoDeuda> deudas() {
+        return listaDeudas;
+    }
+
+    public List<Abono> abonosDe(String deudaId) {
+        return deudas.abonosDe(deudaId);
+    }
+
+    public Deuda crearDeuda(String nombre, Deuda.Tipo tipo, BigDecimal monto, LocalDate fecha, LocalDate fechaLimite) {
+        Deuda deuda = deudas.crear(nombre, tipo, monto, fecha, fechaLimite);
+        recargar();
+        return deuda;
+    }
+
+    public void editarDeuda(String id, String nombre, BigDecimal monto, LocalDate fechaLimite) {
+        deudas.editar(id, nombre, monto, fechaLimite);
+        recargar();
+    }
+
+    public void eliminarDeuda(String id) {
+        deudas.eliminar(id);
+        recargar();
+    }
+
+    /**
+     * Si es una deuda que debo, el abono es un gasto: se registra, se muestra su mes y se
+     * resalta en Movimientos como cualquier gasto recién registrado.
+     */
+    public void abonarDeuda(String deudaId, BigDecimal monto, LocalDate fecha, Categoria categoria, String descripcion) {
+        ultimoRegistradoId = deudas.abonar(deudaId, monto, fecha, idDe(categoria), descripcion);
+        mostrarMesDe(fecha);
+    }
+
+    /** Saldo actual de una deuda, ya recargado (para confirmar tras abonar). */
+    public Optional<EstadoDeuda> deuda(String id) {
+        return listaDeudas.stream().filter(d -> d.deuda().id().equals(id)).findFirst();
+    }
+
+    public Optional<EstadoMeta> meta(String id) {
+        return listaMetas.stream().filter(m -> m.meta().id().equals(id)).findFirst();
+    }
+
+    public void eliminarAbonoDeuda(String deudaId, String abonoId) {
+        deudas.eliminarAbono(deudaId, abonoId);
+        recargar();
     }
 
     // ---- Recurrencias ----

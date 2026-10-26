@@ -24,7 +24,8 @@ public final class Migrador {
             "V2__color_categoria.sql",
             "V3__paleta_violeta.sql",
             "V4__categorias_en_tono.sql",
-            "V5__recurrencias.sql"
+            "V5__recurrencias.sql",
+            "V6__metas_y_deudas.sql"
     );
 
     private final BaseDeDatos baseDeDatos;

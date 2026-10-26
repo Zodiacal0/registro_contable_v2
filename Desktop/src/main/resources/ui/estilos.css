@@ -963,20 +963,44 @@
 
 /* ---------- Recurrentes ---------- */
 
-/* "Se repite" en el panel: una caja con el interruptor y, al activarlo, la frecuencia */
-.caja-repetir {
+/* Cajas con interruptor del panel ("Se repite", "Va a una deuda o meta"): al activarlas se abren */
+.caja-interruptor {
     -fx-background-color: -c-linea, -c-0;
     -fx-background-insets: 0, 1;
     -fx-background-radius: 14, 13;
     -fx-padding: 14 16;
 }
 
-.caja-repetir .icono {
+.caja-interruptor .icono {
     -fx-background-color: -c-4;
 }
 
-.repetir-texto {
+.interruptor-texto {
     -fx-font-family: "Figtree Light Medium";
+}
+
+/* Destinos (deuda o meta): el ícono del chip dice qué es, igual que el punto de color en categorías */
+.caja-interruptor .chip .icono {
+    -fx-background-color: -c-4;
+}
+
+.caja-interruptor .chip:selected .icono {
+    -fx-background-color: -c-5;
+}
+
+.destino-ayuda {
+    -fx-text-fill: -c-4;
+    -fx-font-size: 13px;
+}
+
+/* Confirmación tras abonar o aportar (sin color semántico: la paleta no tiene verde) */
+.aviso {
+    -fx-text-fill: -c-5;
+    -fx-font-family: "Figtree Light Medium";
+    -fx-font-size: 13px;
+    -fx-background-color: rgba(226, 221, 231, 0.07);
+    -fx-background-radius: 10;
+    -fx-padding: 10 12;
 }
 
 /* Interruptor tipo iOS: la perilla se corre de izquierda a derecha con -fx-alignment */
@@ -1054,6 +1078,88 @@
 
 .lista-item-pausado {
     -fx-opacity: 0.55;
+}
+
+/* ---------- Metas y deudas ---------- */
+
+/* Barra de progreso: pista tenue y relleno del color de la meta (o tono claro para deudas) */
+.progreso-pista {
+    -fx-background-color: -c-1;
+}
+
+.progreso-fina {
+    -fx-min-height: 4;
+    -fx-pref-height: 4;
+    -fx-max-height: 4;
+    -fx-background-radius: 2;
+}
+
+.progreso-gruesa {
+    -fx-min-height: 12;
+    -fx-pref-height: 12;
+    -fx-max-height: 12;
+    -fx-background-radius: 6;
+}
+
+.progreso-fina .progreso-relleno {
+    -fx-background-radius: 2;
+}
+
+.progreso-gruesa .progreso-relleno {
+    -fx-background-radius: 6;
+}
+
+/* Cifra principal del detalle (lo ahorrado, el saldo pendiente) */
+.cifra-grande {
+    -fx-font-family: "Figtree Light SemiBold";
+    -fx-font-size: 44px;
+}
+
+.pildora-dato {
+    -fx-background-color: rgba(226, 221, 231, 0.07);
+    -fx-background-radius: 999px;
+    -fx-text-fill: -c-4;
+    -fx-font-size: 12px;
+    -fx-padding: 6 12;
+}
+
+/* Pestañas "Debo / Me deben": control segmentado tipo Apple */
+.segmentado {
+    -fx-background-color: -c-1;
+    -fx-background-radius: 999px;
+    -fx-padding: 3;
+}
+
+.segmento {
+    -fx-background-color: transparent;
+    -fx-background-radius: 999px;
+    -fx-background-insets: 0;
+    -fx-text-fill: -c-4;
+    -fx-font-family: "Figtree Light Medium";
+    -fx-font-size: 13px;
+    -fx-padding: 7 12;
+}
+
+.segmento:hover {
+    -fx-text-fill: -c-5;
+}
+
+.segmento:selected {
+    -fx-background-color: -c-2;
+    -fx-text-fill: -c-5;
+}
+
+/* Metas completadas y deudas saldadas: se apagan un poco, ya no piden atención */
+.lista-item-completo {
+    -fx-opacity: 0.6;
+}
+
+.fila-quitar {
+    -fx-opacity: 0.6;
+}
+
+.fila-quitar:hover {
+    -fx-opacity: 1;
 }
 
 /* ---------- Esqueleto de carga ---------- */

@@ -1,12 +1,18 @@
 package com.registrogastos;
 
+import com.registrogastos.persistencia.AbonoRepositorio;
 import com.registrogastos.persistencia.BaseDeDatos;
 import com.registrogastos.persistencia.CategoriaRepositorio;
+import com.registrogastos.persistencia.DeudaRepositorio;
 import com.registrogastos.persistencia.GastoRepositorio;
+import com.registrogastos.persistencia.MetaRepositorio;
 import com.registrogastos.persistencia.Migrador;
 import com.registrogastos.persistencia.RecurrenciaRepositorio;
+import com.registrogastos.servicio.DeudaServicio;
 import com.registrogastos.servicio.GastoServicio;
+import com.registrogastos.servicio.MetaServicio;
 import com.registrogastos.servicio.RecurrenciaServicio;
+import com.registrogastos.servicio.Servicios;
 import com.registrogastos.ui.ModeloUi;
 import com.registrogastos.ui.VentanaPrincipal;
 import javafx.application.Application;
@@ -38,10 +44,6 @@ public final class App extends Application {
         System.setProperty("javafx.suppressPreviewWarning", "true");
     }
 
-    /** Los servicios de la app, ya conectados a la misma base. */
-    record Servicios(GastoServicio gastos, RecurrenciaServicio recurrencias) {
-    }
-
     private Servicios servicios;
 
     @Override
@@ -53,7 +55,7 @@ public final class App extends Application {
     @Override
     public void start(Stage escenario) {
         VentanaPrincipal.cargarFuentes();
-        new VentanaPrincipal(new ModeloUi(servicios.gastos(), servicios.recurrencias())).mostrar(escenario);
+        new VentanaPrincipal(new ModeloUi(servicios)).mostrar(escenario);
     }
 
     /** -Dgastos.db=ruta permite usar otra base (p. ej. una de pruebas). */
@@ -70,7 +72,10 @@ public final class App extends Application {
         var reloj = Clock.systemDefaultZone();
         return new Servicios(
                 new GastoServicio(gastos, categorias, reloj),
-                new RecurrenciaServicio(new RecurrenciaRepositorio(baseDeDatos), gastos, categorias, reloj));
+                new RecurrenciaServicio(new RecurrenciaRepositorio(baseDeDatos), gastos, categorias, reloj),
+                new MetaServicio(new MetaRepositorio(baseDeDatos), AbonoRepositorio.aportes(baseDeDatos), reloj),
+                new DeudaServicio(new DeudaRepositorio(baseDeDatos), AbonoRepositorio.cobrosDeuda(baseDeDatos),
+                        gastos, categorias, reloj));
     }
 
     public static void main(String[] args) {
