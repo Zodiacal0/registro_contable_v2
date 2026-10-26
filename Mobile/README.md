@@ -21,6 +21,19 @@ $env:ANDROID_HOME = 'C:\Users\Public\AndroidSdk'
 npm run android        # copia las migraciones, genera android/ y compila e instala
 ```
 
+### Alternativa: compilar en WSL (Ubuntu)
+
+En Linux no existen los límites de rutas de Windows. Desde PowerShell, en la raíz del repo:
+
+```powershell
+wsl -d Ubuntu -- bash Mobile/scripts/compilar-wsl.sh
+```
+
+La primera vez instala en tu usuario de Linux, sin `sudo`, Node 22 y el SDK de Android
+(~3 GB, porque WSL no puede usar el SDK de Windows). Después copia el código a
+`~/registro-gastos` (compilar sobre `/mnt/c` es varias veces más lento) y deja el APK release
+en `Mobile\dist\RegistroDeGastos.apk`. Las siguientes veces solo copia y compila.
+
 ### Dos límites de Windows (y cómo quedaron resueltos)
 
 Los módulos nativos (expo-modules-core, expo-sqlite, react-native-screens) compilan C++ con
